@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Network, Plus, Search } from "lucide-react";
+import { Network, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,22 +15,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminDetailSheet } from "@/components/admin/AdminDetailSheet";
-import { DOMAIN_RECORDS } from "@/lib/mock-data";
+import { DomainDialog } from "@/components/admin/DomainDialog";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useAdminData } from "@/lib/admin-data";
 import { num } from "@/lib/format";
 import type { DomainRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export default function DomainsPage() {
+  const { domainRecords, removeDomainRecord } = useAdminData();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<DomainRecord | null>(null);
+  const [editing, setEditing] = useState<DomainRecord | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState<DomainRecord | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return DOMAIN_RECORDS;
-    return DOMAIN_RECORDS.filter((d) =>
+    if (!q) return domainRecords;
+    return domainRecords.filter((d) =>
       [d.technicalDomain, d.corporateGroup, d.region].join(" ").toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, domainRecords]);
+
+  function openCreate() {
+    setEditing(null);
+    setDialogOpen(true);
+  }
+  function openEdit(record: DomainRecord) {
+    setActive(null);
+    setEditing(record);
+    setDialogOpen(true);
+  }
 
   return (
     <div className="space-y-8">
@@ -37,7 +54,7 @@ export default function DomainsPage() {
         title="Domains"
         description="Group technical domains under a single corporate name. The mapping powers all reporting accuracy."
         action={
-          <Button className="gap-2 rounded-xl">
+          <Button className="gap-2 rounded-xl" onClick={openCreate}>
             <Plus className="size-4" />
             Add domain mapping
           </Button>
@@ -58,7 +75,7 @@ export default function DomainsPage() {
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {filtered.length} of {DOMAIN_RECORDS.length} mappings
+              {filtered.length} of {domainRecords.length} mappings
             </div>
           </div>
 
@@ -71,6 +88,7 @@ export default function DomainsPage() {
                   <TableHead className="hidden md:table-cell">Region</TableHead>
                   <TableHead className="hidden md:table-cell text-right">Users</TableHead>
                   <TableHead>State</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -104,11 +122,39 @@ export default function DomainsPage() {
                         {d.active ? "Active" : "Archived"}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg"
+                          aria-label={`Edit ${d.technicalDomain}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(d);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Delete ${d.technicalDomain}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleting(d);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                       No domain mappings match your search.
                     </TableCell>
                   </TableRow>
@@ -145,8 +191,34 @@ export default function DomainsPage() {
             ) : null,
           },
         ]}
-        primaryAction={{ label: "Edit mapping", onClick: () => setActive(null) }}
-        destructiveAction={{ label: "Archive mapping", onClick: () => setActive(null) }}
+        primaryAction={
+          active ? { label: "Edit mapping", onClick: () => openEdit(active) } : undefined
+        }
+        destructiveAction={
+          active
+            ? {
+                label: "Delete mapping",
+                onClick: () => { setDeleting(active); setActive(null); },
+              }
+            : undefined
+        }
+      />
+
+      <DomainDialog open={dialogOpen} onOpenChange={setDialogOpen} initial={editing} />
+
+      <ConfirmDialog
+        open={deleting != null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={deleting ? `Delete ${deleting.technicalDomain}?` : "Delete mapping?"}
+        description="This removes the mapping permanently. Reporting will fall back to the raw technical domain name."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (deleting) {
+            removeDomainRecord(deleting.id);
+            toast.success(`${deleting.technicalDomain} deleted.`);
+          }
+        }}
       />
     </div>
   );

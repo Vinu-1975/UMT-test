@@ -3,15 +3,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
-import { TrendChart } from "@/components/dashboard/charts/TrendChart";
-import { ApplicationDonut } from "@/components/dashboard/charts/ApplicationDonut";
-import { ApplicationBars } from "@/components/dashboard/charts/ApplicationBars";
-import { CadBars } from "@/components/dashboard/charts/CadBars";
-import { CadVsAppMatrix } from "@/components/dashboard/charts/CadVsAppMatrix";
-import { RegionBars } from "@/components/dashboard/charts/RegionBars";
-import { DomainList } from "@/components/dashboard/charts/DomainList";
-import { SplitDonut } from "@/components/dashboard/charts/SplitDonut";
-import { HARDWARE_SPLIT, PROD_TEST_SPLIT } from "@/lib/mock-data";
+import { TrendChart, TREND_FILTER } from "@/components/dashboard/charts/TrendChart";
+import { ApplicationDonut, APP_DONUT_FILTER } from "@/components/dashboard/charts/ApplicationDonut";
+import { ApplicationBars, APP_BARS_FILTER } from "@/components/dashboard/charts/ApplicationBars";
+import { CadBars, CAD_BARS_FILTER } from "@/components/dashboard/charts/CadBars";
+import { CadVsAppMatrix, CAD_MATRIX_FILTER } from "@/components/dashboard/charts/CadVsAppMatrix";
+import { RegionBars, REGION_BARS_FILTER } from "@/components/dashboard/charts/RegionBars";
+import { DomainList, DOMAIN_LIST_FILTER } from "@/components/dashboard/charts/DomainList";
+import { HardwareSplit, HARDWARE_SPLIT_FILTER } from "@/components/dashboard/charts/HardwareSplit";
+import { ProdTestSplit, PROD_TEST_FILTER } from "@/components/dashboard/charts/ProdTestSplit";
 
 const TABS = [
   { id: "trend",        label: "Usage over time" },
@@ -39,7 +39,7 @@ export default function ReportsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Reports"
-        description="Each chart answers a single question. Pick a tab to drill into a topic."
+        description="Each chart answers a single question. Use the page filters at the top, or click ‘Filter’ on any card to override them just for that chart."
       />
 
       <FilterChips />
@@ -61,6 +61,7 @@ export default function ReportsPage() {
           <ChartCard
             title="How is usage trending this year?"
             description="Total sessions per month, broken down into production and test runs."
+            filter={TREND_FILTER}
           >
             <TrendChart />
           </ChartCard>
@@ -69,13 +70,15 @@ export default function ReportsPage() {
         <TabsContent value="applications" className="mt-6 space-y-4">
           <ChartCard
             title="Which applications are used most?"
-            description="The top six applications by total sessions this year."
+            description="The top six applications by total sessions in the selected window."
+            filter={APP_DONUT_FILTER}
           >
             <ApplicationDonut />
           </ChartCard>
           <ChartCard
             title="What are people doing inside each app?"
             description="A breakdown of sessions by activity type for the busiest apps."
+            filter={APP_BARS_FILTER}
           >
             <ApplicationBars />
           </ChartCard>
@@ -85,12 +88,14 @@ export default function ReportsPage() {
           <ChartCard
             title="Which CAD platform is used the most?"
             description="Sessions grouped by CAD tool, sorted from most-used to least-used."
+            filter={CAD_BARS_FILTER}
           >
             <CadBars />
           </ChartCard>
           <ChartCard
             title="How do top apps differ across CAD tools?"
             description="The five busiest applications, plotted against each CAD platform."
+            filter={CAD_MATRIX_FILTER}
           >
             <CadVsAppMatrix />
           </ChartCard>
@@ -102,6 +107,7 @@ export default function ReportsPage() {
               className="lg:col-span-3"
               title="Where in the world is UMT used?"
               description="Sessions by region for the selected period."
+              filter={REGION_BARS_FILTER}
             >
               <RegionBars />
             </ChartCard>
@@ -109,6 +115,7 @@ export default function ReportsPage() {
               className="lg:col-span-2"
               title="Which corporate group leads adoption?"
               description="Sessions grouped by domain, ranked from highest to lowest."
+              filter={DOMAIN_LIST_FILTER}
             >
               <DomainList />
             </ChartCard>
@@ -120,18 +127,16 @@ export default function ReportsPage() {
             <ChartCard
               title="VDI or local hardware?"
               description="Where the work is actually being done."
+              filter={HARDWARE_SPLIT_FILTER}
             >
-              <SplitDonut data={HARDWARE_SPLIT} primaryLabel="Sessions" />
+              <HardwareSplit />
             </ChartCard>
             <ChartCard
               title="Production vs test sessions"
               description="How much of the workload is actual production vs trial runs."
+              filter={PROD_TEST_FILTER}
             >
-              <SplitDonut
-                data={PROD_TEST_SPLIT}
-                primaryLabel="Sessions"
-                colors={["var(--chart-1)", "var(--chart-4)"]}
-              />
+              <ProdTestSplit />
             </ChartCard>
           </div>
         </TabsContent>

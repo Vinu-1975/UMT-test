@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ChartFilterPopover } from "./ChartFilterPopover";
 import { cn } from "@/lib/utils";
+import type { FilterDim } from "@/lib/types";
 
 export type ChartCardProps = {
   title: string;
@@ -7,13 +9,32 @@ export type ChartCardProps = {
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /**
+   * If provided, ChartCard renders a per-chart filter popover into the action
+   * slot. The same `id` and `applicable` should be used by the chart's
+   * `useChartFilters(id, applicable)` call.
+   */
+  filter?: { id: string; applicable: readonly FilterDim[] };
 };
 
 /**
  * One question, one card. The title is phrased as a plain-English question,
  * the description gives the user a one-line guide for what the chart shows.
  */
-export function ChartCard({ title, description, action, children, className }: ChartCardProps) {
+export function ChartCard({
+  title,
+  description,
+  action,
+  children,
+  className,
+  filter,
+}: ChartCardProps) {
+  const right =
+    action ??
+    (filter ? (
+      <ChartFilterPopover chartId={filter.id} applicable={filter.applicable} />
+    ) : null);
+
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="gap-1.5 pb-2">
@@ -24,7 +45,7 @@ export function ChartCard({ title, description, action, children, className }: C
               <p className="text-xs text-muted-foreground">{description}</p>
             ) : null}
           </div>
-          {action}
+          {right}
         </div>
       </CardHeader>
       <CardContent className="pt-0">{children}</CardContent>

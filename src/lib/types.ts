@@ -1,14 +1,11 @@
 // Domain types for UMT — kept aligned with legacy MVC controller JSON shapes
 // so swapping mock data for a real API is a one-file change.
 
-export type CadTool = "CATIA" | "NX" | "Creo" | "SolidWorks" | "Inventor";
+export type CadTool = "CATIA" | "NX";
 
-export type Region =
-  | "North America"
-  | "Europe"
-  | "Asia Pacific"
-  | "South America"
-  | "Middle East";
+export type Region = "NA" | "EU" | "ASIA" | "SA";
+
+export type ProductCategory = "Fluids" | "Sealing" | "General";
 
 export type SessionStatus = "Active" | "Completed" | "Failed" | "Stopped";
 
@@ -18,7 +15,7 @@ export interface Application {
   id: string;
   name: string;
   cad: CadTool;
-  productLine: string;
+  productCategory: ProductCategory;
 }
 
 export interface MonthlyUsagePoint {
@@ -30,6 +27,7 @@ export interface MonthlyUsagePoint {
 export interface ApplicationUsage {
   application: string;
   cad: CadTool;
+  productCategory: ProductCategory;
   total: number;
   validation: number;
   execution: number;
@@ -61,31 +59,43 @@ export interface RawSessionRow {
   machine: string;
   domain: string;
   region: Region;
-  productLine: string;
+  productCategory: ProductCategory;
   startTime: string;    // ISO
   stopTime: string | null;
   status: SessionStatus;
   hardware: Hardware;
 }
 
+// VDI user — fields per UMT.txt section 2:
+// "userid, region (EU/NA), domain, createddate, createdby, modifieddate, modifiedby"
 export interface VdiUserRecord {
-  id: string;
-  fullName: string;
-  email: string;
-  domain: string;
+  id: string;             // record key
+  userId: string;         // "userid" — the actual user identifier
   region: Region;
-  hostname: string;
-  status: "Active" | "Inactive" | "Pending" | "Disabled";
-  lastSeen: string;     // ISO
+  domain: string;
+  createdDate: string;    // ISO
+  createdBy: string;
+  modifiedDate: string;   // ISO
+  modifiedBy: string;
 }
 
+// Domain assignment — fields per UMT.txt section 3:
+// "userid, domain, region, createddate, createdby, modifieddate, modifiedby"
 export interface DomainRecord {
-  id: string;
-  technicalDomain: string;
-  corporateGroup: string;
+  id: string;             // record key
+  userId: string;
+  domain: string;
   region: Region;
-  users: number;
-  active: boolean;
+  createdDate: string;
+  createdBy: string;
+  modifiedDate: string;
+  modifiedBy: string;
+}
+
+// Admin — UMT.txt section 4: "userid, remove, (add admin)"
+export interface AdminRecord {
+  id: string;
+  userId: string;
 }
 
 export interface KpiPoint {
@@ -93,13 +103,34 @@ export interface KpiPoint {
   value: number;
 }
 
+// ── Filter system ────────────────────────────────────────────────
+
+export type RangePreset = "30d" | "90d" | "ytd" | "12m" | "custom";
+
+export type FilterDim =
+  | "range"
+  | "application"
+  | "cad"
+  | "productCategory"
+  | "region"
+  | "domain"
+  | "hardware"
+  | "status";
+
 export interface FilterState {
-  range: "30d" | "90d" | "ytd" | "12m";
-  application: string;  // "all" or app name
-  cad: string;          // "all" or CadTool
-  region: string;       // "all" or Region
+  range: RangePreset;
+  customFrom?: string;
+  customTo?: string;
+  application: string;
+  cad: string;
+  productCategory: string;
+  region: string;
+  domain: string;
   hardware: "all" | Hardware;
+  status: "all" | SessionStatus;
 }
+
+export type ChartFilterOverride = Partial<FilterState>;
 
 export type ApiResponse<T> = {
   success: boolean;

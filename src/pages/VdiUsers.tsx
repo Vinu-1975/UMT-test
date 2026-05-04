@@ -4,10 +4,13 @@ import {
   CircleSlash,
   Clock,
   PauseCircle,
+  Pencil,
   Plus,
   Search,
+  Trash2,
   UserCheck,
 } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminDetailSheet } from "@/components/admin/AdminDetailSheet";
-import { VDI_USERS, VDI_STATS } from "@/lib/mock-data";
+import { VdiUserDialog } from "@/components/admin/VdiUserDialog";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useAdminData } from "@/lib/admin-data";
 import { initials, relative } from "@/lib/format";
 import type { VdiUserRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -62,16 +67,41 @@ function StatCard({
 }
 
 export default function VdiUsersPage() {
+  const { vdiUsers, removeVdiUser } = useAdminData();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<VdiUserRecord | null>(null);
+  const [editing, setEditing] = useState<VdiUserRecord | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState<VdiUserRecord | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return VDI_USERS;
-    return VDI_USERS.filter((u) =>
+    if (!q) return vdiUsers;
+    return vdiUsers.filter((u) =>
       [u.fullName, u.email, u.hostname, u.domain, u.region].join(" ").toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, vdiUsers]);
+
+  const stats = useMemo(
+    () => ({
+      total:    vdiUsers.length,
+      active:   vdiUsers.filter((u) => u.status === "Active").length,
+      inactive: vdiUsers.filter((u) => u.status === "Inactive").length,
+      pending:  vdiUsers.filter((u) => u.status === "Pending").length,
+      disabled: vdiUsers.filter((u) => u.status === "Disabled").length,
+    }),
+    [vdiUsers],
+  );
+
+  function openCreate() {
+    setEditing(null);
+    setDialogOpen(true);
+  }
+  function openEdit(record: VdiUserRecord) {
+    setActive(null);
+    setEditing(record);
+    setDialogOpen(true);
+  }
 
   return (
     <div className="space-y-8">
@@ -79,7 +109,7 @@ export default function VdiUsersPage() {
         title="VDI users"
         description="Add, view, and manage your virtual desktop users. Click any row to see full details."
         action={
-          <Button className="gap-2 rounded-xl">
+          <Button className="gap-2 rounded-xl" onClick={openCreate}>
             <Plus className="size-4" />
             Add VDI user
           </Button>
@@ -87,10 +117,10 @@ export default function VdiUsersPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active"   value={VDI_STATS.active}   icon={CheckCircle2}  tone="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" />
-        <StatCard label="Inactive" value={VDI_STATS.inactive} icon={PauseCircle}   tone="bg-zinc-500/10 text-zinc-700 dark:text-zinc-300" />
-        <StatCard label="Pending"  value={VDI_STATS.pending}  icon={Clock}         tone="bg-amber-500/10 text-amber-700 dark:text-amber-300" />
-        <StatCard label="Disabled" value={VDI_STATS.disabled} icon={CircleSlash}   tone="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
+        <StatCard label="Active"   value={stats.active}   icon={CheckCircle2}  tone="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" />
+        <StatCard label="Inactive" value={stats.inactive} icon={PauseCircle}   tone="bg-zinc-500/10 text-zinc-700 dark:text-zinc-300" />
+        <StatCard label="Pending"  value={stats.pending}  icon={Clock}         tone="bg-amber-500/10 text-amber-700 dark:text-amber-300" />
+        <StatCard label="Disabled" value={stats.disabled} icon={CircleSlash}   tone="bg-rose-500/10 text-rose-700 dark:text-rose-300" />
       </div>
 
       <Card>
@@ -107,7 +137,7 @@ export default function VdiUsersPage() {
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              {filtered.length} of {VDI_USERS.length} users
+              {filtered.length} of {vdiUsers.length} users
             </div>
           </div>
 
@@ -121,6 +151,7 @@ export default function VdiUsersPage() {
                   <TableHead className="hidden lg:table-cell">Region</TableHead>
                   <TableHead>Last seen</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -160,11 +191,39 @@ export default function VdiUsersPage() {
                         {u.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg"
+                          aria-label={`Edit ${u.fullName}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(u);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Delete ${u.fullName}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleting(u);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
                       No users match your search.
                     </TableCell>
                   </TableRow>
@@ -196,15 +255,40 @@ export default function VdiUsersPage() {
           { label: "Hostname", value: active?.hostname },
           { label: "Last seen", value: active ? relative(active.lastSeen) : null },
         ]}
-        primaryAction={{ label: "Edit user", onClick: () => setActive(null) }}
-        destructiveAction={{ label: "Disable user", onClick: () => setActive(null) }}
+        primaryAction={
+          active
+            ? { label: "Edit user", onClick: () => openEdit(active) }
+            : undefined
+        }
+        destructiveAction={
+          active
+            ? { label: "Delete user", onClick: () => { setDeleting(active); setActive(null); } }
+            : undefined
+        }
+      />
+
+      <VdiUserDialog open={dialogOpen} onOpenChange={setDialogOpen} initial={editing} />
+
+      <ConfirmDialog
+        open={deleting != null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={deleting ? `Delete ${deleting.fullName}?` : "Delete user?"}
+        description="This permanently removes the VDI user record. Their session history will remain in reports."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (deleting) {
+            removeVdiUser(deleting.id);
+            toast.success(`${deleting.fullName} deleted.`);
+          }
+        }}
       />
 
       <Card className="border-dashed bg-muted/30">
         <CardContent className="flex items-center gap-3 p-5">
           <UserCheck className="size-5 text-primary" />
           <div className="text-sm text-muted-foreground">
-            Tip — disabling a user keeps their session history. Use it instead of deleting when you can.
+            Tip — set a user to <span className="font-medium">Disabled</span> to keep their session history. Use <span className="font-medium">Delete</span> only when removing a record entirely.
           </div>
         </CardContent>
       </Card>

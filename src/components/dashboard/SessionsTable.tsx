@@ -12,9 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RAW_SESSIONS } from "@/lib/mock-data";
+import { useChartFilters } from "@/lib/filter-context";
+import { filterRawSessions } from "@/lib/filtering";
 import { initials, durationMin, dateTime } from "@/lib/format";
-import type { SessionStatus } from "@/lib/types";
+import type { FilterDim, SessionStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
@@ -26,20 +27,39 @@ const STATUS_TONE: Record<SessionStatus, string> = {
   Stopped:   "bg-zinc-500/12 text-zinc-700 dark:text-zinc-300",
 };
 
+export const SESSIONS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
+  id: "sessionsTable",
+  applicable: [
+    "range",
+    "application",
+    "cad",
+    "productLine",
+    "region",
+    "domain",
+    "hardware",
+    "status",
+  ],
+};
+
 export function SessionsTable() {
+  const { effective } = useChartFilters(SESSIONS_FILTER.id, SESSIONS_FILTER.applicable);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
+    const byFilter = filterRawSessions(effective);
     const q = query.trim().toLowerCase();
-    if (!q) return RAW_SESSIONS;
-    return RAW_SESSIONS.filter((row) =>
-      [row.application, row.cad, row.user, row.machine, row.domain, row.region]
+    if (!q) return byFilter;
+    return byFilter.filter((row) =>
+      [
+        row.application, row.cad, row.user, row.machine,
+        row.domain, row.region, row.productLine, row.status, row.hardware,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(q),
     );
-  }, [query]);
+  }, [query, effective]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -76,7 +96,9 @@ export function SessionsTable() {
               <TableHead className="hidden md:table-cell">CAD</TableHead>
               <TableHead className="hidden lg:table-cell">Region</TableHead>
               <TableHead className="hidden xl:table-cell">Domain</TableHead>
+              <TableHead className="hidden xl:table-cell">Hardware</TableHead>
               <TableHead>Started</TableHead>
+              <TableHead className="hidden lg:table-cell">Stopped</TableHead>
               <TableHead className="hidden md:table-cell">Duration</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
@@ -106,7 +128,18 @@ export function SessionsTable() {
                 <TableCell className="hidden xl:table-cell text-muted-foreground">
                   {s.domain}
                 </TableCell>
+                <TableCell className="hidden xl:table-cell">
+                  <Badge
+                    variant="secondary"
+                    className="rounded-full border-transparent bg-muted px-2.5 py-0.5 text-xs font-medium"
+                  >
+                    {s.hardware}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-sm">{dateTime(s.startTime)}</TableCell>
+                <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                  {s.stopTime ? dateTime(s.stopTime) : "—"}
+                </TableCell>
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                   {durationMin(s.startTime, s.stopTime)}
                 </TableCell>
@@ -125,8 +158,8 @@ export function SessionsTable() {
             ))}
             {visible.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
-                  No sessions match your search. Try a different term.
+                <TableCell colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
+                  No sessions match your filters. Try widening the date range or clearing a chip.
                 </TableCell>
               </TableRow>
             ) : null}

@@ -1,4 +1,5 @@
 import type {
+  AdminRecord,
   Application,
   ApplicationUsage,
   CadTool,
@@ -6,6 +7,7 @@ import type {
   DomainRecord,
   DomainUsage,
   MonthlyUsagePoint,
+  ProductCategory,
   RawSessionRow,
   Region,
   RegionUsage,
@@ -14,7 +16,7 @@ import type {
   Hardware,
 } from "./types";
 
-// Deterministic PRNG so the demo data is stable across reloads.
+// Deterministic PRNG so demo data is stable across reloads.
 function mulberry32(seed: number) {
   let t = seed >>> 0;
   return () => {
@@ -30,59 +32,62 @@ const pick = <T,>(arr: readonly T[]) => arr[Math.floor(rand() * arr.length)]!;
 const between = (min: number, max: number) =>
   Math.round(min + rand() * (max - min));
 
-const CAD_TOOLS: readonly CadTool[] = [
-  "CATIA",
-  "NX",
-  "Creo",
-  "SolidWorks",
-  "Inventor",
+// ── Enumerations (exact values from UMT.txt) ────────────────────
+export const CAD_TOOLS: readonly CadTool[] = ["CATIA", "NX"];
+
+export const REGIONS: readonly Region[] = ["NA", "EU", "ASIA", "SA"];
+
+export const PRODUCT_CATEGORIES: readonly ProductCategory[] = [
+  "Fluids",
+  "Sealing",
+  "General",
 ];
-const REGIONS: readonly Region[] = [
-  "North America",
-  "Europe",
-  "Asia Pacific",
-  "South America",
-  "Middle East",
-];
-const DOMAINS = [
-  "engineering.acme",
-  "design.acme",
-  "manufacturing.acme",
-  "rd.acme",
-  "global.acme",
-  "partner.acme",
-  "consult.acme",
-];
-const CORPORATE_GROUPS = [
-  "ACME Engineering",
-  "ACME Design",
-  "ACME Manufacturing",
-  "ACME R&D",
-  "ACME Global",
-  "Partner Network",
-  "Consultants",
+
+export const DOMAINS = ["ATIBAIA", "BATTIPAGLIA", "CHONGQING", "COVENTRY"] as const;
+
+export const HARDWARE_KINDS: readonly Hardware[] = ["VDI", "Non-VDI"];
+export const SESSION_STATUSES: readonly SessionStatus[] = [
+  "Active",
+  "Completed",
+  "Failed",
+  "Stopped",
 ];
 
 // ── Applications ────────────────────────────────────────────────
+// The full 24-tool list from UMT.txt, with case preserved exactly as written.
+// CAD and product-category assignments are deterministic placeholders — adjust
+// when the real mapping arrives.
 export const APPLICATIONS: Application[] = [
-  { id: "app-1",  name: "Body Designer",      cad: "CATIA",      productLine: "Body & Chassis" },
-  { id: "app-2",  name: "Surface Studio",     cad: "CATIA",      productLine: "Exterior" },
-  { id: "app-3",  name: "Powertrain Suite",   cad: "NX",         productLine: "Powertrain" },
-  { id: "app-4",  name: "Harness Builder",    cad: "NX",         productLine: "Electronics" },
-  { id: "app-5",  name: "Mechanism Studio",   cad: "Creo",       productLine: "Powertrain" },
-  { id: "app-6",  name: "Sheet Metal Pro",    cad: "Creo",       productLine: "Body & Chassis" },
-  { id: "app-7",  name: "Assembly Lab",       cad: "SolidWorks", productLine: "Interior" },
-  { id: "app-8",  name: "Drawing Tools",      cad: "SolidWorks", productLine: "Body & Chassis" },
-  { id: "app-9",  name: "Layout Planner",     cad: "Inventor",   productLine: "Interior" },
-  { id: "app-10", name: "Casting Designer",   cad: "Inventor",   productLine: "Powertrain" },
-  { id: "app-11", name: "Detail Master",      cad: "CATIA",      productLine: "Electronics" },
-  { id: "app-12", name: "Validator Plus",     cad: "NX",         productLine: "Body & Chassis" },
+  { id: "app-01", name: "3d trim",            cad: "CATIA", productCategory: "Sealing" },
+  { id: "app-02", name: "auto section",       cad: "CATIA", productCategory: "Sealing" },
+  { id: "app-03", name: "bbb",                cad: "NX",    productCategory: "General" },
+  { id: "app-04", name: "Design toolkit",     cad: "CATIA", productCategory: "General" },
+  { id: "app-05", name: "dlc",                cad: "NX",    productCategory: "General" },
+  { id: "app-06", name: "ext straighten",     cad: "NX",    productCategory: "Sealing" },
+  { id: "app-07", name: "fbd pmc",            cad: "CATIA", productCategory: "Fluids" },
+  { id: "app-08", name: "file manager",       cad: "CATIA", productCategory: "General" },
+  { id: "app-09", name: "file organiser",     cad: "NX",    productCategory: "Fluids" },
+  { id: "app-10", name: "fts pmc",            cad: "CATIA", productCategory: "Fluids" },
+  { id: "app-11", name: "hide show 3d",       cad: "CATIA", productCategory: "Sealing" },
+  { id: "app-12", name: "measure 3d dim",     cad: "CATIA", productCategory: "General" },
+  { id: "app-13", name: "multi 3d ops",       cad: "NX",    productCategory: "Sealing" },
+  { id: "app-14", name: "notes utility",      cad: "NX",    productCategory: "General" },
+  { id: "app-15", name: "pin space place",    cad: "NX",    productCategory: "General" },
+  { id: "app-16", name: "point chart",        cad: "NX",    productCategory: "Fluids" },
+  { id: "app-17", name: "point converter",    cad: "NX",    productCategory: "Sealing" },
+  { id: "app-18", name: "polyline creation",  cad: "CATIA", productCategory: "Fluids" },
+  { id: "app-19", name: "profile checker",    cad: "NX",    productCategory: "Fluids" },
+  { id: "app-20", name: "rename entities",    cad: "NX",    productCategory: "Sealing" },
+  { id: "app-21", name: "section manager",    cad: "NX",    productCategory: "General" },
+  { id: "app-22", name: "smart cvt",          cad: "CATIA", productCategory: "Fluids" },
+  { id: "app-23", name: "tube chart",         cad: "CATIA", productCategory: "Fluids" },
+  { id: "app-24", name: "xyz coord",          cad: "CATIA", productCategory: "General" },
 ];
 
 // ── Headline KPIs ───────────────────────────────────────────────
 export const HEADLINE = {
   totalSessions:        184_204,
-  sessionsDelta:        12_840,        // vs last month
+  sessionsDelta:        12_840,
   activeUsers:          2_148,
   activeUsersDelta:     46,
   applications:         APPLICATIONS.length,
@@ -112,6 +117,7 @@ export const APPLICATION_USAGE: ApplicationUsage[] = APPLICATIONS.map((a) => {
   return {
     application: a.name,
     cad: a.cad,
+    productCategory: a.productCategory,
     total,
     validation,
     execution,
@@ -133,19 +139,17 @@ export const CAD_USAGE: CadUsage[] = CAD_TOTALS
   .sort((a, b) => b.sessions - a.sessions);
 
 // ── Regions ─────────────────────────────────────────────────────
-const REGION_SEED: RegionUsage[] = [
-  { region: "North America", sessions: 64_300 },
-  { region: "Europe",        sessions: 52_140 },
-  { region: "Asia Pacific",  sessions: 41_980 },
-  { region: "South America", sessions: 14_840 },
-  { region: "Middle East",   sessions:  10_944 },
+export const REGION_USAGE: RegionUsage[] = [
+  { region: "NA",   sessions: 64_300 },
+  { region: "EU",   sessions: 52_140 },
+  { region: "ASIA", sessions: 41_980 },
+  { region: "SA",   sessions: 14_840 },
 ];
-export const REGION_USAGE: RegionUsage[] = REGION_SEED;
 
 // ── Domains ─────────────────────────────────────────────────────
-export const DOMAIN_USAGE: DomainUsage[] = CORPORATE_GROUPS.map((g, i) => ({
-  domain: g,
-  sessions: between(8_000, 38_000) - i * 1_200,
+export const DOMAIN_USAGE: DomainUsage[] = DOMAINS.map((d, i) => ({
+  domain: d,
+  sessions: between(20_000, 70_000) - i * 2_000,
 })).sort((a, b) => b.sessions - a.sessions);
 
 // ── Hardware split + Production/Test split ──────────────────────
@@ -158,19 +162,34 @@ export const PROD_TEST_SPLIT = [
   { name: "Test",       value: MONTHLY_USAGE.reduce((s, m) => s + m.test, 0) },
 ];
 
-// ── Raw sessions ────────────────────────────────────────────────
-const STATUS_OPTIONS: SessionStatus[] = ["Active", "Completed", "Completed", "Completed", "Failed", "Stopped"];
+// ── Helpers for admin / sample data ─────────────────────────────
+const STATUS_OPTIONS: SessionStatus[] = [
+  "Active", "Completed", "Completed", "Completed", "Failed", "Stopped",
+];
 const HARDWARE_OPTIONS: Hardware[] = ["VDI", "VDI", "VDI", "Non-VDI"];
-const FIRST_NAMES = ["Alex","Priya","Marco","Lin","Yuki","Sara","Diego","Kofi","Anna","Ravi","Jonas","Emma","Liam","Mei","Noah","Aisha"];
-const LAST_NAMES  = ["Patel","Schmidt","García","Tanaka","Müller","Silva","Okafor","Singh","Rossi","Park","Dubois","Khan","Cohen","Andersen"];
 
-function buildName(): string {
-  return `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
+// User IDs follow a corporate-style stub: 3 letters + 3 digits.
+const USER_PREFIXES = [
+  "apt", "psh", "mga", "ltn", "ymu", "sru", "dgs", "kfo", "ans", "rsv",
+  "jbs", "emb", "lha", "mzh", "noa", "asa", "ckh", "lpa", "rdb", "sjk",
+];
+function makeUserId(i: number): string {
+  const p = USER_PREFIXES[i % USER_PREFIXES.length]!;
+  return `${p}${(100 + i).toString()}`;
 }
 
+const ADMIN_USERS = ["adm001", "adm002", "adm003"];
+function pickAdmin(): string {
+  return pick(ADMIN_USERS);
+}
+function isoOffsetDays(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60_000).toISOString();
+}
+
+// ── Raw sessions ────────────────────────────────────────────────
 export const RAW_SESSIONS: RawSessionRow[] = Array.from({ length: 96 }, (_, i) => {
   const app = pick(APPLICATIONS);
-  const startOffsetMin = between(0, 60 * 24 * 30);   // up to 30 days ago
+  const startOffsetMin = between(0, 60 * 24 * 30);
   const start = new Date(Date.now() - startOffsetMin * 60_000);
   const status = pick(STATUS_OPTIONS);
   const stop = status === "Active" ? null : new Date(start.getTime() + between(8, 240) * 60_000);
@@ -178,11 +197,11 @@ export const RAW_SESSIONS: RawSessionRow[] = Array.from({ length: 96 }, (_, i) =
     id: `sess-${(i + 1).toString().padStart(4, "0")}`,
     application: app.name,
     cad: app.cad,
-    user: buildName(),
+    user: makeUserId(i),
     machine: `WS-${between(100, 999)}`,
     domain: pick(DOMAINS),
     region: pick(REGIONS),
-    productLine: app.productLine,
+    productCategory: app.productCategory,
     startTime: start.toISOString(),
     stopTime: stop?.toISOString() ?? null,
     status,
@@ -191,46 +210,47 @@ export const RAW_SESSIONS: RawSessionRow[] = Array.from({ length: 96 }, (_, i) =
 });
 
 // ── VDI users ───────────────────────────────────────────────────
-const VDI_STATUSES: VdiUserRecord["status"][] = ["Active","Active","Active","Inactive","Pending","Disabled"];
-export const VDI_USERS: VdiUserRecord[] = Array.from({ length: 28 }, (_, i) => {
-  const fullName = buildName();
-  const status = pick(VDI_STATUSES);
-  const lastSeen = new Date(Date.now() - between(0, 60 * 24 * 14) * 60_000);
-  const email = `${fullName.toLowerCase().replace(/\s+/g, ".")}@${pick(DOMAINS)}.com`;
+export const VDI_USERS: VdiUserRecord[] = Array.from({ length: 24 }, (_, i) => {
+  const createdDays  = between(60, 720);
+  const modifiedDays = between(1, Math.max(2, createdDays - 1));
   return {
     id: `vdi-${(i + 1).toString().padStart(3, "0")}`,
-    fullName,
-    email,
-    domain: pick(DOMAINS),
+    userId: makeUserId(i),
     region: pick(REGIONS),
-    hostname: `VDI-${between(1000, 9999)}`,
-    status,
-    lastSeen: lastSeen.toISOString(),
+    domain: pick(DOMAINS),
+    createdDate:  isoOffsetDays(createdDays),
+    createdBy:    pickAdmin(),
+    modifiedDate: isoOffsetDays(modifiedDays),
+    modifiedBy:   pickAdmin(),
   };
 });
 
-export const VDI_STATS = {
-  total:    VDI_USERS.length,
-  active:   VDI_USERS.filter((u) => u.status === "Active").length,
-  inactive: VDI_USERS.filter((u) => u.status === "Inactive").length,
-  pending:  VDI_USERS.filter((u) => u.status === "Pending").length,
-  disabled: VDI_USERS.filter((u) => u.status === "Disabled").length,
-};
+// ── Domain assignments (user ↔ domain mapping) ──────────────────
+export const DOMAIN_RECORDS: DomainRecord[] = Array.from({ length: 18 }, (_, i) => {
+  const createdDays  = between(60, 720);
+  const modifiedDays = between(1, Math.max(2, createdDays - 1));
+  return {
+    id: `dom-${(i + 1).toString().padStart(3, "0")}`,
+    userId: makeUserId(i + 5),
+    domain: pick(DOMAINS),
+    region: pick(REGIONS),
+    createdDate:  isoOffsetDays(createdDays),
+    createdBy:    pickAdmin(),
+    modifiedDate: isoOffsetDays(modifiedDays),
+    modifiedBy:   pickAdmin(),
+  };
+});
 
-// ── Domain mappings ─────────────────────────────────────────────
-export const DOMAIN_RECORDS: DomainRecord[] = DOMAINS.map((d, i) => ({
-  id: `dom-${(i + 1).toString().padStart(3, "0")}`,
-  technicalDomain: d,
-  corporateGroup: CORPORATE_GROUPS[i] ?? "Other",
-  region: pick(REGIONS),
-  users: between(40, 480),
-  active: rand() > 0.18,
+// ── Admins ──────────────────────────────────────────────────────
+export const ADMIN_RECORDS: AdminRecord[] = ADMIN_USERS.map((u, i) => ({
+  id: `adm-${(i + 1).toString().padStart(3, "0")}`,
+  userId: u,
 }));
 
 // ── Quick-link suggestions for Home page ───────────────────────
 export const QUICK_LINKS = [
-  { title: "View latest sessions",  description: "See who is using which tool right now",          to: "/sessions" },
-  { title: "Compare CAD tools",     description: "Which CAD platform is used the most?",           to: "/reports?tab=cad" },
-  { title: "Manage VDI users",      description: "Add, edit, or remove VDI user records",          to: "/vdi" },
-  { title: "Map a new domain",      description: "Group technical domains under a corporate name", to: "/domains" },
+  { title: "View latest sessions", description: "See who is using which tool right now",     to: "/sessions" },
+  { title: "Compare CAD tools",    description: "Which CAD platform is used the most?",      to: "/reports?tab=cad" },
+  { title: "Manage VDI users",     description: "Add, edit, or remove VDI user records",     to: "/vdi" },
+  { title: "User-domain mappings", description: "Map users to engineering domains",          to: "/domains" },
 ];
