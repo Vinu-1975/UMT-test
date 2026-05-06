@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
-import { MonthlyUsage, MONTHLY_USAGE_FILTER } from "@/components/dashboard/charts/MonthlyUsage";
+import { MonthlyUsageTotal, MONTHLY_TOTAL_FILTER } from "@/components/dashboard/charts/MonthlyUsageTotal";
 import { ApplicationDonut, APP_DONUT_FILTER } from "@/components/dashboard/charts/ApplicationDonut";
 import { ApplicationBars, APP_BARS_FILTER } from "@/components/dashboard/charts/ApplicationBars";
 import {
@@ -20,18 +20,18 @@ export default function ReportsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Reports"
-        description="Each chart answers a single question. Use the page filters at the top, or click ‘Filter’ on any card to override them just for that chart."
+        description="Each chart answers a single question. Use the page filters at the top, or click 'Filter' on any card to override them just for that chart."
       />
 
       <FilterChips />
 
       <div className="space-y-4">
         <ChartCard
-          title="How many sessions ran each month?"
-          description="Total application usage per month, split by CAD platform."
-          filter={MONTHLY_USAGE_FILTER}
+          title="What is the overall monthly usage?"
+          description="Total sessions per month, split by CAD platform. Hover a bar to see the CATIA / NX breakdown."
+          filter={MONTHLY_TOTAL_FILTER}
         >
-          <MonthlyUsage />
+          <MonthlyUsageTotal />
         </ChartCard>
 
         <ChartCard
