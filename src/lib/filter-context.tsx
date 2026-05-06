@@ -5,7 +5,7 @@ export const DEFAULT_FILTERS: FilterState = {
   range: "ytd",
   application: "all",
   cad: "all",
-  productCategory: "all",
+  productLine: "all",
   region: "all",
   domain: "all",
   hardware: "all",

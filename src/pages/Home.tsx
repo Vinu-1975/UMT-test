@@ -4,12 +4,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
-import { TrendChart, TREND_FILTER } from "@/components/dashboard/charts/TrendChart";
+import { MonthlyUsage, MONTHLY_USAGE_FILTER } from "@/components/dashboard/charts/MonthlyUsage";
 import { HardwareSplit, HARDWARE_SPLIT_FILTER } from "@/components/dashboard/charts/HardwareSplit";
 import { QuickLinks } from "@/components/dashboard/QuickLinks";
 import { useFilters } from "@/lib/filter-context";
 import { filterRawSessions } from "@/lib/filtering";
-import { HEADLINE } from "@/lib/mock-data";
+import { HEADLINE, RAW_SESSIONS } from "@/lib/mock-data";
 
 export default function HomePage() {
   const { global } = useFilters();
@@ -73,11 +73,11 @@ export default function HomePage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           className="lg:col-span-2"
-          title="How is usage trending this year?"
-          description="Production and test sessions, by month."
-          filter={TREND_FILTER}
+          title="How many sessions ran each month?"
+          description="Total application usage per month, split by CAD platform."
+          filter={MONTHLY_USAGE_FILTER}
         >
-          <TrendChart />
+          <MonthlyUsage />
         </ChartCard>
 
         <ChartCard
@@ -99,5 +99,5 @@ export default function HomePage() {
   );
 }
 
-// Total raw rows we generate; used to compute filter ratios for KPIs above.
-const RAW_COUNT = 96;
+// Total raw rows in our dataset; used to compute filter ratios for KPIs above.
+const RAW_COUNT = RAW_SESSIONS.length;

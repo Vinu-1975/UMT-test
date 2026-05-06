@@ -3,6 +3,7 @@ import type {
   CadUsage,
   DomainUsage,
   FilterState,
+  MonthlyCadUsagePoint,
   MonthlyUsagePoint,
   RawSessionRow,
   RegionUsage,
@@ -13,6 +14,7 @@ import {
   CAD_USAGE,
   DOMAIN_USAGE,
   HARDWARE_SPLIT,
+  MONTHLY_CAD_USAGE,
   MONTHLY_USAGE,
   PROD_TEST_SPLIT,
   RAW_SESSIONS,
@@ -62,11 +64,23 @@ export function filterMonthly(filters: FilterState): MonthlyUsagePoint[] {
   }));
 }
 
+export function filterMonthlyCad(filters: FilterState): MonthlyCadUsagePoint[] {
+  const months = rangeToMonths(filters);
+  const sliced = MONTHLY_CAD_USAGE.slice(-months);
+  const scale = approximateUsageScale(filters);
+  // When the user has selected a single CAD tool, zero out the other.
+  return sliced.map((m) => {
+    const catia = filters.cad === "all" || filters.cad === "CATIA" ? Math.round(m.CATIA * scale) : 0;
+    const nx    = filters.cad === "all" || filters.cad === "NX"    ? Math.round(m.NX * scale)    : 0;
+    return { month: m.month, CATIA: catia, NX: nx, total: catia + nx };
+  });
+}
+
 export function filterApplicationUsage(filters: FilterState): ApplicationUsage[] {
   return APPLICATION_USAGE.filter((u) => {
     if (filters.application !== "all" && u.application !== filters.application) return false;
     if (filters.cad !== "all" && u.cad !== filters.cad) return false;
-    if (filters.productCategory !== "all" && u.productCategory !== filters.productCategory) return false;
+    if (filters.productLine !== "all" && u.productLine !== filters.productLine) return false;
     return true;
   });
 }
@@ -126,7 +140,7 @@ export function filterRawSessions(filters: FilterState): RawSessionRow[] {
     if (start < from || start > to) return false;
     if (filters.application !== "all" && s.application !== filters.application) return false;
     if (filters.cad !== "all" && s.cad !== filters.cad) return false;
-    if (filters.productCategory !== "all" && s.productCategory !== filters.productCategory) return false;
+    if (filters.productLine !== "all" && s.productLine !== filters.productLine) return false;
     if (filters.region !== "all" && s.region !== filters.region) return false;
     if (filters.domain !== "all" && s.domain !== filters.domain) return false;
     if (filters.hardware !== "all" && s.hardware !== filters.hardware) return false;
@@ -141,8 +155,8 @@ function approximateUsageScale(filters: FilterState): number {
   let scale = 1;
   if (filters.application !== "all") {
     scale *= 1 / APPLICATIONS.length;
-  } else if (filters.productCategory !== "all") {
-    const matching = APPLICATIONS.filter((a) => a.productCategory === filters.productCategory).length;
+  } else if (filters.productLine !== "all") {
+    const matching = APPLICATIONS.filter((a) => a.productLine === filters.productLine).length;
     scale *= matching / APPLICATIONS.length;
   }
   if (filters.cad !== "all") {

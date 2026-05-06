@@ -5,17 +5,17 @@ export type CadTool = "CATIA" | "NX";
 
 export type Region = "NA" | "EU" | "ASIA" | "SA";
 
-export type ProductCategory = "Fluids" | "Sealing" | "General";
-
 export type SessionStatus = "Active" | "Completed" | "Failed" | "Stopped";
 
 export type Hardware = "VDI" | "Non-VDI";
+
+export type VdiStatus = "Active" | "Inactive" | "Pending" | "Disabled";
 
 export interface Application {
   id: string;
   name: string;
   cad: CadTool;
-  productCategory: ProductCategory;
+  productLine: string;
 }
 
 export interface MonthlyUsagePoint {
@@ -24,15 +24,29 @@ export interface MonthlyUsagePoint {
   test: number;
 }
 
+export interface MonthlyCadUsagePoint {
+  month: string;        // "Jan", "Feb", …
+  CATIA: number;
+  NX: number;
+  total: number;
+}
+
 export interface ApplicationUsage {
   application: string;
   cad: CadTool;
-  productCategory: ProductCategory;
+  productLine: string;
   total: number;
   validation: number;
   execution: number;
   blockCreation: number;
   viewOps: number;
+}
+
+export interface ApplicationFunctionalityUsage {
+  application: string;
+  functionality: string;
+  cad: CadTool;
+  total: number;
 }
 
 export interface CadUsage {
@@ -53,43 +67,44 @@ export interface DomainUsage {
 
 export interface RawSessionRow {
   id: string;
+  srNo: number;
   application: string;
+  functionality: string;
   cad: CadTool;
   user: string;
   machine: string;
   domain: string;
   region: Region;
-  productCategory: ProductCategory;
-  startTime: string;    // ISO
+  productLine: string;
+  startTime: string;    // "YYYY-MM-DD HH:MM:SS"
   stopTime: string | null;
   status: SessionStatus;
   hardware: Hardware;
+  isProd: boolean;
 }
 
-// VDI user — fields per UMT.txt section 2:
-// "userid, region (EU/NA), domain, createddate, createdby, modifieddate, modifiedby"
+// VDI user — fields per the dashboard admin UI:
+// fullName, email, domain, region, hostname, status, lastSeen
 export interface VdiUserRecord {
-  id: string;             // record key
-  userId: string;         // "userid" — the actual user identifier
-  region: Region;
+  id: string;
+  fullName: string;
+  email: string;
   domain: string;
-  createdDate: string;    // ISO
-  createdBy: string;
-  modifiedDate: string;   // ISO
-  modifiedBy: string;
+  region: Region;
+  hostname: string;
+  status: VdiStatus;
+  lastSeen: string;     // ISO
 }
 
-// Domain assignment — fields per UMT.txt section 3:
-// "userid, domain, region, createddate, createdby, modifieddate, modifiedby"
+// Domain mapping — technical domain → corporate group:
+// technicalDomain, corporateGroup, region, users (count), active
 export interface DomainRecord {
-  id: string;             // record key
-  userId: string;
-  domain: string;
+  id: string;
+  technicalDomain: string;
+  corporateGroup: string;
   region: Region;
-  createdDate: string;
-  createdBy: string;
-  modifiedDate: string;
-  modifiedBy: string;
+  users: number;
+  active: boolean;
 }
 
 // Admin — UMT.txt section 4: "userid, remove, (add admin)"
@@ -111,7 +126,7 @@ export type FilterDim =
   | "range"
   | "application"
   | "cad"
-  | "productCategory"
+  | "productLine"
   | "region"
   | "domain"
   | "hardware"
@@ -123,7 +138,7 @@ export interface FilterState {
   customTo?: string;
   application: string;
   cad: string;
-  productCategory: string;
+  productLine: string;
   region: string;
   domain: string;
   hardware: "all" | Hardware;
