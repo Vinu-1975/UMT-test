@@ -9,6 +9,7 @@
 @theme inline {
     --font-heading: 'Geist Variable', 'Inter Variable', system-ui, sans-serif;
     --font-sans: 'Geist Variable', 'Inter Variable', system-ui, sans-serif;
+
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -17,14 +18,17 @@
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
+
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+
     --color-destructive: var(--destructive);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
@@ -32,6 +36,12 @@
     --color-warning-foreground: var(--warning-foreground);
     --color-info: var(--info);
     --color-info-foreground: var(--info-foreground);
+
+    /* Cooper Standard secondary brand mark */
+    --color-brand-gold: var(--brand-gold);
+    --color-brand-gold-foreground: var(--brand-gold-foreground);
+    --color-brand-blue: var(--brand-blue);
+
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -46,6 +56,7 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -54,112 +65,126 @@
     --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-/* ──────────────────────────────────────────
-   Calm Workspace — light theme (default)
-   Warm off-white canvas, calm teal accent,
-   friendly chart palette, generous radius.
-   ────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   Cooper Standard — light theme (default)
+   Pure-white canvas. Royal blue authority.
+   Golden yellow as the brand spark. Hairline
+   borders define surfaces; color is reserved
+   for moments that earn it.
+   ───────────────────────────────────────────── */
 :root {
-    /* canvas + surfaces */
-    --background: oklch(0.985 0.004 95);          /* warm off-white */
-    --foreground: oklch(0.235 0.018 250);         /* deep slate */
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.235 0.018 250);
+    /* canvas + surfaces — mostly white, a single drop of cool */
+    --background: oklch(0.995 0.002 250);          /* near-pure cool white */
+    --foreground: oklch(0.22 0.025 250);           /* deep slate */
+    --card: oklch(1 0 0);                          /* pure white surfaces float */
+    --card-foreground: oklch(0.22 0.025 250);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.235 0.018 250);
+    --popover-foreground: oklch(0.22 0.025 250);
 
-    /* primary = calm teal (the single accent) */
-    --primary: oklch(0.58 0.10 195);
-    --primary-foreground: oklch(0.985 0 0);
+    /* primary = Cooper Standard royal blue */
+    --primary: oklch(0.43 0.17 256);
+    --primary-foreground: oklch(0.99 0 0);
 
     /* neutral chrome */
-    --secondary: oklch(0.96 0.005 95);
-    --secondary-foreground: oklch(0.30 0.015 250);
-    --muted: oklch(0.97 0.005 95);
-    --muted-foreground: oklch(0.515 0.012 250);
-    --accent: oklch(0.94 0.025 195);              /* very soft teal tint */
-    --accent-foreground: oklch(0.32 0.06 195);
+    --secondary: oklch(0.972 0.005 250);
+    --secondary-foreground: oklch(0.30 0.020 250);
+    --muted: oklch(0.978 0.004 250);
+    --muted-foreground: oklch(0.51 0.015 250);
+    --accent: oklch(0.962 0.025 256);              /* very pale brand-blue tint */
+    --accent-foreground: oklch(0.34 0.13 256);
 
-    /* status */
+    /* brand secondary = the yellow swoosh */
+    --brand-blue: oklch(0.43 0.17 256);
+    --brand-gold: oklch(0.83 0.16 88);
+    --brand-gold-foreground: oklch(0.30 0.07 78);
+
+    /* status — semantic, brand-tuned */
     --destructive: oklch(0.62 0.16 27);
-    --success: oklch(0.66 0.13 158);
-    --success-foreground: oklch(0.985 0 0);
-    --warning: oklch(0.78 0.13 75);
-    --warning-foreground: oklch(0.30 0.04 75);
-    --info: oklch(0.68 0.10 230);
-    --info-foreground: oklch(0.985 0 0);
+    --success: oklch(0.62 0.13 156);
+    --success-foreground: oklch(0.99 0 0);
+    --warning: oklch(0.78 0.14 85);                /* pulls toward brand gold */
+    --warning-foreground: oklch(0.30 0.05 80);
+    --info: oklch(0.55 0.13 256);                  /* brand-blue info */
+    --info-foreground: oklch(0.99 0 0);
 
-    /* edges & rings */
-    --border: oklch(0.92 0.006 95);
-    --input: oklch(0.92 0.006 95);
-    --ring: oklch(0.58 0.10 195 / 0.55);
+    /* edges & rings — hairline */
+    --border: oklch(0.92 0.005 250);
+    --input: oklch(0.92 0.005 250);
+    --ring: oklch(0.43 0.17 256 / 0.45);
 
-    /* friendly chart palette — calm but distinct */
-    --chart-1: oklch(0.62 0.10 195);   /* teal */
-    --chart-2: oklch(0.65 0.12 240);   /* soft blue */
-    --chart-3: oklch(0.70 0.13 152);   /* sage green */
-    --chart-4: oklch(0.78 0.13 75);    /* warm amber */
-    --chart-5: oklch(0.62 0.16 17);    /* coral */
-    --chart-6: oklch(0.66 0.13 305);   /* muted lavender */
+    /* charts — analogous palette anchored in blue + gold.
+       Order is intentional: brand pair leads, supporting
+       cool tones extend, warm gold returns at the end so
+       any number of segments still feels brand-coherent. */
+    --chart-1: oklch(0.46 0.17 256);   /* brand blue */
+    --chart-2: oklch(0.80 0.16 88);    /* brand gold */
+    --chart-3: oklch(0.64 0.14 244);   /* azure */
+    --chart-4: oklch(0.58 0.09 220);   /* steel blue */
+    --chart-5: oklch(0.50 0.11 286);   /* deep periwinkle */
+    --chart-6: oklch(0.86 0.11 92);    /* pale gold */
 
-    --radius: 0.875rem;                /* generous, friendly */
+    --radius: 0.75rem;                 /* precise, but not severe */
 
-    /* sidebar */
-    --sidebar: oklch(0.99 0.003 95);
+    /* sidebar — pure white, separated by a hairline */
+    --sidebar: oklch(1 0 0);
     --sidebar-foreground: oklch(0.30 0.018 250);
-    --sidebar-primary: oklch(0.58 0.10 195);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.94 0.025 195);
-    --sidebar-accent-foreground: oklch(0.32 0.06 195);
-    --sidebar-border: oklch(0.92 0.006 95);
-    --sidebar-ring: oklch(0.58 0.10 195 / 0.55);
+    --sidebar-primary: oklch(0.43 0.17 256);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.962 0.025 256);
+    --sidebar-accent-foreground: oklch(0.34 0.13 256);
+    --sidebar-border: oklch(0.92 0.005 250);
+    --sidebar-ring: oklch(0.43 0.17 256 / 0.45);
 }
 
 .dark {
-    --background: oklch(0.20 0.015 250);
-    --foreground: oklch(0.96 0.005 95);
-    --card: oklch(0.235 0.015 250);
-    --card-foreground: oklch(0.96 0.005 95);
-    --popover: oklch(0.235 0.015 250);
-    --popover-foreground: oklch(0.96 0.005 95);
+    --background: oklch(0.18 0.022 256);
+    --foreground: oklch(0.96 0.005 250);
+    --card: oklch(0.22 0.020 256);
+    --card-foreground: oklch(0.96 0.005 250);
+    --popover: oklch(0.22 0.020 256);
+    --popover-foreground: oklch(0.96 0.005 250);
 
-    --primary: oklch(0.72 0.10 195);
-    --primary-foreground: oklch(0.20 0.015 250);
+    --primary: oklch(0.72 0.14 256);
+    --primary-foreground: oklch(0.18 0.022 256);
 
-    --secondary: oklch(0.28 0.015 250);
-    --secondary-foreground: oklch(0.96 0.005 95);
-    --muted: oklch(0.28 0.015 250);
-    --muted-foreground: oklch(0.70 0.010 250);
-    --accent: oklch(0.32 0.04 195);
-    --accent-foreground: oklch(0.92 0.04 195);
+    --secondary: oklch(0.27 0.015 256);
+    --secondary-foreground: oklch(0.96 0.005 250);
+    --muted: oklch(0.27 0.015 256);
+    --muted-foreground: oklch(0.72 0.012 250);
+    --accent: oklch(0.32 0.06 256);
+    --accent-foreground: oklch(0.92 0.05 256);
+
+    --brand-blue: oklch(0.72 0.14 256);
+    --brand-gold: oklch(0.85 0.16 88);
+    --brand-gold-foreground: oklch(0.20 0.05 80);
 
     --destructive: oklch(0.70 0.17 27);
-    --success: oklch(0.74 0.13 158);
-    --success-foreground: oklch(0.20 0.02 158);
-    --warning: oklch(0.82 0.13 75);
-    --warning-foreground: oklch(0.20 0.04 75);
-    --info: oklch(0.74 0.10 230);
-    --info-foreground: oklch(0.20 0.02 230);
+    --success: oklch(0.74 0.13 156);
+    --success-foreground: oklch(0.18 0.02 156);
+    --warning: oklch(0.84 0.14 85);
+    --warning-foreground: oklch(0.20 0.05 80);
+    --info: oklch(0.74 0.12 256);
+    --info-foreground: oklch(0.18 0.022 256);
 
     --border: oklch(1 0 0 / 0.10);
     --input: oklch(1 0 0 / 0.14);
-    --ring: oklch(0.72 0.10 195 / 0.55);
+    --ring: oklch(0.72 0.14 256 / 0.55);
 
-    --chart-1: oklch(0.72 0.10 195);
-    --chart-2: oklch(0.74 0.12 240);
-    --chart-3: oklch(0.76 0.13 152);
-    --chart-4: oklch(0.82 0.13 75);
-    --chart-5: oklch(0.72 0.16 17);
-    --chart-6: oklch(0.72 0.13 305);
+    --chart-1: oklch(0.72 0.14 256);
+    --chart-2: oklch(0.85 0.16 88);
+    --chart-3: oklch(0.74 0.14 244);
+    --chart-4: oklch(0.66 0.09 220);
+    --chart-5: oklch(0.66 0.11 286);
+    --chart-6: oklch(0.88 0.11 92);
 
-    --sidebar: oklch(0.22 0.015 250);
-    --sidebar-foreground: oklch(0.92 0.005 95);
-    --sidebar-primary: oklch(0.72 0.10 195);
-    --sidebar-primary-foreground: oklch(0.20 0.015 250);
-    --sidebar-accent: oklch(0.28 0.04 195);
-    --sidebar-accent-foreground: oklch(0.92 0.04 195);
+    --sidebar: oklch(0.20 0.022 256);
+    --sidebar-foreground: oklch(0.92 0.005 250);
+    --sidebar-primary: oklch(0.72 0.14 256);
+    --sidebar-primary-foreground: oklch(0.18 0.022 256);
+    --sidebar-accent: oklch(0.32 0.06 256);
+    --sidebar-accent-foreground: oklch(0.92 0.05 256);
     --sidebar-border: oklch(1 0 0 / 0.10);
-    --sidebar-ring: oklch(0.72 0.10 195 / 0.55);
+    --sidebar-ring: oklch(0.72 0.14 256 / 0.55);
 }
 
 @layer base {
@@ -180,6 +205,7 @@
   .num {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
+    letter-spacing: -0.01em;
   }
   /* Soft focus ring */
   :focus-visible {
@@ -187,11 +213,25 @@
   }
 }
 
-/* Subtle card hover lift used throughout the app */
+/* Brand hairline used at the very top of the viewport — the only place
+   gold and blue sit beside each other, echoing the swoosh in the logo. */
+@utility brand-hairline {
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.43 0.17 256) 0%,
+    oklch(0.43 0.17 256) 38%,
+    oklch(0.83 0.16 88) 50%,
+    oklch(0.43 0.17 256) 62%,
+    oklch(0.43 0.17 256) 100%
+  );
+}
+
+/* Subtle card hover lift — tinted with the brand blue so even motion
+   carries identity. */
 @utility card-hover {
   @apply transition-all duration-200;
   &:hover {
-    box-shadow: 0 4px 16px -8px oklch(0.235 0.018 250 / 0.10);
+    box-shadow: 0 4px 18px -10px oklch(0.43 0.17 256 / 0.16);
     transform: translateY(-1px);
   }
 }
