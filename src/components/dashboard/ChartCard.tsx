@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartFilterPopover } from "./ChartFilterPopover";
+import { ChartFilterChips } from "./ChartFilterChips";
 import { cn } from "@/lib/utils";
 import type { FilterDim } from "@/lib/types";
 
@@ -10,11 +11,18 @@ export type ChartCardProps = {
   children: React.ReactNode;
   className?: string;
   /**
-   * If provided, ChartCard renders a per-chart filter popover into the action
-   * slot. The same `id` and `applicable` should be used by the chart's
+   * If provided, ChartCard renders per-chart filters wired to this chart id.
+   * The same `id` and `applicable` should be used by the chart's
    * `useChartFilters(id, applicable)` call.
    */
   filter?: { id: string; applicable: readonly FilterDim[] };
+  /**
+   * How filters are rendered:
+   * - "popover" (default): a single "Filter" button in the header corner.
+   * - "chips":   a chip row underneath the description, matching the page-level
+   *              filter-chip design — useful when there is no global filter bar.
+   */
+  filterStyle?: "popover" | "chips";
 };
 
 /**
@@ -28,10 +36,13 @@ export function ChartCard({
   children,
   className,
   filter,
+  filterStyle = "popover",
 }: ChartCardProps) {
+  const useChips = filter && filterStyle === "chips";
+
   const right =
     action ??
-    (filter ? (
+    (filter && !useChips ? (
       <ChartFilterPopover chartId={filter.id} applicable={filter.applicable} />
     ) : null);
 
@@ -47,6 +58,11 @@ export function ChartCard({
           </div>
           {right}
         </div>
+        {useChips ? (
+          <div className="pt-2">
+            <ChartFilterChips chartId={filter!.id} applicable={filter!.applicable} />
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="pt-0">{children}</CardContent>
     </Card>

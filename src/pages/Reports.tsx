@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ChartCard } from "@/components/dashboard/ChartCard";
-import { FilterChips } from "@/components/dashboard/FilterChips";
 import { MonthlyUsageTotal, MONTHLY_TOTAL_FILTER } from "@/components/dashboard/charts/MonthlyUsageTotal";
 import { ApplicationDonut, APP_DONUT_FILTER } from "@/components/dashboard/charts/ApplicationDonut";
 import { ApplicationBars, APP_BARS_FILTER } from "@/components/dashboard/charts/ApplicationBars";
@@ -20,16 +19,15 @@ export default function ReportsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Reports"
-        description="Each chart answers a single question. Use the page filters at the top, or click 'Filter' on any card to override them just for that chart."
+        description="Each chart answers a single question and carries its own filter chips — tweak any card without touching the others."
       />
-
-      <FilterChips />
 
       <div className="space-y-4">
         <ChartCard
           title="What is the overall monthly usage?"
           description="Total sessions per month, split by CAD platform. Hover a bar to see the CATIA / NX breakdown."
           filter={MONTHLY_TOTAL_FILTER}
+          filterStyle="chips"
         >
           <MonthlyUsageTotal />
         </ChartCard>
@@ -38,6 +36,7 @@ export default function ReportsPage() {
           title="Which applications are used most?"
           description="The top six applications by total sessions in the selected window."
           filter={APP_DONUT_FILTER}
+          filterStyle="chips"
         >
           <ApplicationDonut />
         </ChartCard>
@@ -46,6 +45,7 @@ export default function ReportsPage() {
           title="What are people doing inside each app?"
           description="A breakdown of sessions by activity type for the busiest apps."
           filter={APP_BARS_FILTER}
+          filterStyle="chips"
         >
           <ApplicationBars />
         </ChartCard>
@@ -54,6 +54,7 @@ export default function ReportsPage() {
           title="Which functionality is used most in each application?"
           description="Pick an application to see its top functionalities, ranked by session count."
           filter={APP_FUNCTIONALITY_FILTER}
+          filterStyle="chips"
         >
           <ApplicationFunctionality />
         </ChartCard>
@@ -62,6 +63,7 @@ export default function ReportsPage() {
           title="Which CAD platform is used the most?"
           description="Sessions grouped by CAD tool, sorted from most-used to least-used."
           filter={CAD_BARS_FILTER}
+          filterStyle="chips"
         >
           <CadBars />
         </ChartCard>
@@ -70,6 +72,7 @@ export default function ReportsPage() {
           title="How do top apps differ across CAD tools?"
           description="The five busiest applications, plotted against each CAD platform."
           filter={CAD_MATRIX_FILTER}
+          filterStyle="chips"
         >
           <CadVsAppMatrix />
         </ChartCard>
@@ -80,6 +83,7 @@ export default function ReportsPage() {
             title="Where in the world is UMT used?"
             description="Sessions by region for the selected period."
             filter={REGION_BARS_FILTER}
+            filterStyle="chips"
           >
             <RegionBars />
           </ChartCard>
@@ -88,6 +92,7 @@ export default function ReportsPage() {
             title="Which corporate group leads adoption?"
             description="Sessions grouped by domain, ranked from highest to lowest."
             filter={DOMAIN_LIST_FILTER}
+            filterStyle="chips"
           >
             <DomainList />
           </ChartCard>
@@ -98,6 +103,7 @@ export default function ReportsPage() {
             title="VDI or local hardware?"
             description="Where the work is actually being done."
             filter={HARDWARE_SPLIT_FILTER}
+            filterStyle="chips"
           >
             <HardwareSplit />
           </ChartCard>
@@ -105,6 +111,7 @@ export default function ReportsPage() {
             title="Production vs test sessions"
             description="How much of the workload is actual production vs trial runs."
             filter={PROD_TEST_FILTER}
+            filterStyle="chips"
           >
             <ProdTestSplit />
           </ChartCard>

@@ -131,8 +131,30 @@ export function MonthlyUsageTotal() {
               name="CATIA"
               stackId="usage"
               fill="url(#catiaBarGrad)"
-              radius={showNx ? [0, 0, 0, 0] : [8, 8, 0, 0]}
               maxBarSize={48}
+              shape={(props: any) => {
+                const { x, y, width, height, payload } = props;
+
+                const shouldRoundTop =
+                  !showNx || payload.NX === 0;
+
+                const radius = shouldRoundTop ? 8 : 0;
+
+                return (
+                  <path
+                    d={`
+            M${x},${y + radius}
+            Q${x},${y} ${x + radius},${y}
+            H${x + width - radius}
+            Q${x + width},${y} ${x + width},${y + radius}
+            V${y + height}
+            H${x}
+            Z
+          `}
+                    fill="url(#catiaBarGrad)"
+                  />
+                );
+              }}
             />
           )}
           {showNx && (

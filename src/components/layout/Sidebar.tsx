@@ -8,6 +8,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { BrandMark } from "./BrandMark";
 import { Separator } from "@/components/ui/separator";
 
 type Item = {
@@ -95,6 +96,28 @@ export function Sidebar() {
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
             New to UMT? Read the getting-started guide or ask your administrator.
           </p>
+        </div>
+
+        {/* Brand sign-off — large, faded CS mark watermark with version line.
+            Anchors the sidebar in the same brand language as the header chip
+            and the top-of-viewport hairline. */}
+        <div className="relative mt-3 overflow-hidden rounded-xl border border-border bg-card/60 px-4 py-3">
+          <BrandMark
+            aria-hidden
+            className="pointer-events-none absolute -right-3 -bottom-3 size-20 opacity-[0.10]"
+          />
+          <div className="relative flex items-center gap-2">
+            <BrandMark className="size-5 shrink-0" />
+            <div className="leading-tight">
+              <div className="text-[11px] font-semibold tracking-tight text-foreground/90">
+                Cooper Standard
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                UMT v1.0 · Internal
+              </div>
+            </div>
+          </div>
+          <div className="brand-hairline relative mt-3 h-[2px] rounded-full opacity-80" />
         </div>
       </div>
     </aside>

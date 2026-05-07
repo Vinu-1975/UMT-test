@@ -1,8 +1,9 @@
-import { Bell, Moon, Search, Sun } from "lucide-react";
+import { Bell, Moon, Search, ShieldCheck, Sun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "@/components/theme-provider";
+import { BrandMark } from "./BrandMark";
 
 export function Topbar() {
   const { theme, setTheme } = useTheme();
@@ -21,6 +22,26 @@ export function Topbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        {/* Cooper Standard brand chip — small CS mark + secured-tenant label.
+            Echoes the logo in the header and signals the internal tenant
+            without competing with the wordmark in the sidebar. */}
+        <div
+          className="mr-2 hidden items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1.5 lg:flex"
+          aria-label="Cooper Standard tenant"
+        >
+          <span className="grid size-6 place-items-center rounded-full bg-primary/8">
+            <BrandMark className="size-[18px]" />
+          </span>
+          <span className="text-[11px] font-semibold tracking-tight text-foreground/85">
+            Cooper Standard
+          </span>
+          <span className="h-3 w-px bg-border" aria-hidden />
+          <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <ShieldCheck className="size-3 text-[color:oklch(0.62_0.13_148)]" />
+            Internal
+          </span>
+        </div>
+
         <Button
           variant="ghost"
           size="icon"
