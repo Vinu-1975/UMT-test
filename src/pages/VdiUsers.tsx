@@ -52,7 +52,7 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <Card>
+    <Card className="brand-edge-top card-hover">
       <CardContent className="flex items-center gap-3 p-4">
         <div className={cn("grid size-10 place-items-center rounded-xl", tone)}>
           <Icon className="size-[18px]" />

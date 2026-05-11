@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   CalendarDays,
+  Check,
   Cpu,
   Globe2,
   Layers,
@@ -26,85 +27,130 @@ import {
   REGIONS,
   TECH_DOMAINS,
 } from "@/lib/mock-data";
-import type { RangePreset } from "@/lib/types";
+import type { Hardware, RangePreset } from "@/lib/types";
 
 const RANGES: { id: RangePreset; label: string }[] = [
-  { id: "30d",    label: "30d" },
-  { id: "90d",    label: "90d" },
-  { id: "ytd",    label: "YTD" },
-  { id: "12m",    label: "12 months" },
-  { id: "custom", label: "Custom" },
+  { id: "currentMonth", label: "This month" },
+  { id: "lastMonth",    label: "Last month" },
+  { id: "thisYear",     label: "This year" },
+  { id: "lastYear",     label: "Last year" },
+  { id: "custom",       label: "Custom" },
 ];
 
-function ChipPopover({
+/**
+ * Multi-select chip. `selected` is the current array; an empty array means
+ * "no filter" (all values pass). Clicking an option toggles its presence;
+ * the "All" row at the top clears the selection.
+ */
+function MultiChipPopover({
   icon: Icon,
   label,
   options,
-  value,
+  selected,
   onChange,
   allLabel,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   options: readonly string[];
-  value: string;
-  onChange: (next: string) => void;
+  selected: readonly string[];
+  onChange: (next: string[]) => void;
   allLabel: string;
 }) {
-  const display = value === "all" ? allLabel : value;
+  const count = selected.length;
+  let display: string;
+  if (count === 0) display = allLabel;
+  else if (count === 1) display = selected[0];
+  else display = `${count} selected`;
+
+  const isActive = count > 0;
+
+  function toggle(opt: string) {
+    if (selected.includes(opt)) {
+      onChange(selected.filter((v) => v !== opt));
+    } else {
+      onChange([...selected, opt]);
+    }
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           size="sm"
-          className="h-9 gap-2 rounded-full font-normal"
+          className={[
+            "h-9 gap-2 rounded-full font-normal transition-colors",
+            isActive
+              ? "border-[oklch(0.43_0.17_256_/_0.45)] bg-[oklch(0.43_0.17_256_/_0.06)]"
+              : "",
+          ].join(" ")}
         >
           <Icon className="size-4 text-muted-foreground" />
           <span className="text-muted-foreground">{label}:</span>
           <span className="font-medium">{display}</span>
+          {count > 1 ? (
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+              {count}
+            </span>
+          ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-60 p-1">
+      <PopoverContent className="w-64 p-1" align="start">
         <ul className="max-h-72 space-y-0.5 overflow-y-auto">
-          <Option active={value === "all"} label={allLabel} onClick={() => onChange("all")} />
-          {options.map((opt) => (
-            <Option
-              key={opt}
-              active={opt === value}
-              label={opt}
-              onClick={() => onChange(opt)}
-            />
-          ))}
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className={[
+                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm",
+                count === 0
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ].join(" ")}
+            >
+              {count === 0 ? allLabel : "Clear selection"}
+              {count === 0 ? <span className="size-1.5 rounded-full bg-primary" /> : null}
+            </button>
+          </li>
+          {options.length > 0 ? (
+            <li aria-hidden className="mx-2 my-1 h-px bg-border" />
+          ) : null}
+          {options.map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <li key={opt}>
+                <button
+                  type="button"
+                  onClick={() => toggle(opt)}
+                  aria-pressed={on}
+                  className={[
+                    "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm",
+                    on
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "hover:bg-muted",
+                  ].join(" ")}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={[
+                        "grid size-4 shrink-0 place-items-center rounded-[5px] border transition-colors",
+                        on
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background",
+                      ].join(" ")}
+                    >
+                      {on ? <Check className="size-3" /> : null}
+                    </span>
+                    {opt}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function Option({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onClick}
-        className={[
-          "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm",
-          active ? "bg-accent text-accent-foreground font-medium" : "hover:bg-muted",
-        ].join(" ")}
-      >
-        {label}
-        {active ? <span className="size-1.5 rounded-full bg-primary" /> : null}
-      </button>
-    </li>
   );
 }
 
@@ -168,12 +214,12 @@ export function FilterChips() {
 
   const dirty =
     global.range !== DEFAULT_FILTERS.range ||
-    global.application !== "all" ||
-    global.cad !== "all" ||
-    global.productLine !== "all" ||
-    global.region !== "all" ||
-    global.domain !== "all" ||
-    global.hardware !== "all";
+    global.application.length > 0 ||
+    global.cad.length > 0 ||
+    global.productLine.length > 0 ||
+    global.region.length > 0 ||
+    global.domain.length > 0 ||
+    global.hardware.length > 0;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -195,7 +241,7 @@ export function FilterChips() {
                 "rounded-full px-3 py-1 text-sm transition-colors",
                 global.range === r.id
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  : "text-muted-foreground hover:text-[color:oklch(0.55_0.13_82)] dark:hover:text-[color:oklch(0.83_0.16_88)]",
               ].join(" ")}
             >
               {r.label}
@@ -206,12 +252,54 @@ export function FilterChips() {
 
       <Separator orientation="vertical" className="hidden h-6 md:block" />
 
-      <ChipPopover icon={Layers}            label="App"      options={APPLICATIONS.map((a) => a.name)} value={global.application} onChange={(v) => setGlobal({ application: v })} allLabel="All applications" />
-      <ChipPopover icon={Cpu}               label="CAD"      options={CAD_TOOLS}                       value={global.cad}         onChange={(v) => setGlobal({ cad: v })}         allLabel="All CAD tools" />
-      <ChipPopover icon={Package}           label="Product"  options={PRODUCT_LINES}                   value={global.productLine} onChange={(v) => setGlobal({ productLine: v })} allLabel="All product lines" />
-      <ChipPopover icon={Globe2}            label="Region"   options={REGIONS}                         value={global.region}      onChange={(v) => setGlobal({ region: v })}      allLabel="All regions" />
-      <ChipPopover icon={Network}           label="Domain"   options={TECH_DOMAINS}                    value={global.domain}      onChange={(v) => setGlobal({ domain: v })}      allLabel="All domains" />
-      <ChipPopover icon={MonitorSmartphone} label="Hardware" options={HARDWARE_KINDS}                  value={global.hardware}    onChange={(v) => setGlobal({ hardware: v as "all" | "VDI" | "Non-VDI" })} allLabel="All hardware" />
+      <MultiChipPopover
+        icon={Layers}
+        label="App"
+        options={APPLICATIONS.map((a) => a.name)}
+        selected={global.application}
+        onChange={(v) => setGlobal({ application: v })}
+        allLabel="All applications"
+      />
+      <MultiChipPopover
+        icon={Cpu}
+        label="CAD"
+        options={CAD_TOOLS}
+        selected={global.cad}
+        onChange={(v) => setGlobal({ cad: v })}
+        allLabel="All CAD tools"
+      />
+      <MultiChipPopover
+        icon={Package}
+        label="Product"
+        options={PRODUCT_LINES}
+        selected={global.productLine}
+        onChange={(v) => setGlobal({ productLine: v })}
+        allLabel="All product lines"
+      />
+      <MultiChipPopover
+        icon={Globe2}
+        label="Region"
+        options={REGIONS}
+        selected={global.region}
+        onChange={(v) => setGlobal({ region: v })}
+        allLabel="All regions"
+      />
+      <MultiChipPopover
+        icon={Network}
+        label="Domain"
+        options={TECH_DOMAINS}
+        selected={global.domain}
+        onChange={(v) => setGlobal({ domain: v })}
+        allLabel="All domains"
+      />
+      <MultiChipPopover
+        icon={MonitorSmartphone}
+        label="Hardware"
+        options={HARDWARE_KINDS}
+        selected={global.hardware}
+        onChange={(v) => setGlobal({ hardware: v as Hardware[] })}
+        allLabel="All hardware"
+      />
 
       {dirty ? (
         <Button

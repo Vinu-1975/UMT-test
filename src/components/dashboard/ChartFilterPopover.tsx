@@ -1,4 +1,4 @@
-import { SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Check, SlidersHorizontal, RotateCcw } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -23,7 +23,13 @@ import {
   SESSION_STATUSES,
   TECH_DOMAINS,
 } from "@/lib/mock-data";
-import type { ChartFilterOverride, FilterDim } from "@/lib/types";
+import type {
+  ChartFilterOverride,
+  FilterDim,
+  Hardware,
+  RangePreset,
+  SessionStatus,
+} from "@/lib/types";
 
 const DIM_LABEL: Record<FilterDim, string> = {
   range:       "Date range",
@@ -46,12 +52,12 @@ const DIM_OPTIONS: Record<Exclude<FilterDim, "range">, readonly string[]> = {
   status:      SESSION_STATUSES,
 };
 
-const RANGE_OPTIONS = [
-  { id: "30d", label: "Last 30 days" },
-  { id: "90d", label: "Last 90 days" },
-  { id: "ytd", label: "Year to date" },
-  { id: "12m", label: "Last 12 months" },
-] as const;
+const RANGE_OPTIONS: { id: RangePreset; label: string }[] = [
+  { id: "currentMonth", label: "Current month" },
+  { id: "lastMonth",    label: "Last month" },
+  { id: "thisYear",     label: "This year" },
+  { id: "lastYear",     label: "Last year" },
+];
 
 export function ChartFilterPopover({
   chartId,
@@ -81,7 +87,7 @@ export function ChartFilterPopover({
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-3">
+      <PopoverContent align="end" className="w-80 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h4 className="text-sm font-semibold">Filter this chart</h4>
           {overrideCount > 0 ? (
@@ -95,67 +101,131 @@ export function ChartFilterPopover({
           ) : null}
         </div>
         <p className="mb-3 text-xs text-muted-foreground">
-          Overrides the page-level filter, just for this card.
+          Overrides the page-level filter, just for this card. Pick multiple
+          values per dimension.
         </p>
         <Separator className="mb-3" />
 
         <div className="space-y-3">
-          {applicable.map((dim) => (
-            <DimRow
-              key={dim}
-              dim={dim}
-              value={effective[dim] as string}
-              onChange={(v) => setOverride({ [dim]: v } as ChartFilterOverride)}
-            />
-          ))}
+          {applicable.map((dim) => {
+            if (dim === "range") {
+              return (
+                <div key={dim} className="space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {DIM_LABEL[dim]}
+                  </span>
+                  <Select
+                    value={effective.range}
+                    onValueChange={(v) =>
+                      setOverride({ range: v as RangePreset })
+                    }
+                  >
+                    <SelectTrigger className="h-9 w-full rounded-lg">
+                      <SelectValue placeholder="Select range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RANGE_OPTIONS.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            }
+            const options = DIM_OPTIONS[dim];
+            const selected = effective[dim] as readonly string[];
+            return (
+              <MultiRow
+                key={dim}
+                label={DIM_LABEL[dim]}
+                options={options}
+                selected={selected}
+                onChange={(next) => {
+                  if (dim === "hardware") {
+                    setOverride({ hardware: next as Hardware[] });
+                  } else if (dim === "status") {
+                    setOverride({ status: next as SessionStatus[] });
+                  } else {
+                    setOverride({ [dim]: next } as ChartFilterOverride);
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>
   );
 }
 
-function DimRow({
-  dim,
-  value,
+/**
+ * Inline multi-select row used inside the per-chart filter popover. Each
+ * option toggles independently; clicking "All" clears the selection.
+ */
+function MultiRow({
+  label,
+  options,
+  selected,
   onChange,
 }: {
-  dim: FilterDim;
-  value: string;
-  onChange: (next: string) => void;
+  label: string;
+  options: readonly string[];
+  selected: readonly string[];
+  onChange: (next: string[]) => void;
 }) {
-  const label = DIM_LABEL[dim];
-  if (dim === "range") {
-    return (
-      <div className="space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="h-9 w-full rounded-lg">
-            <SelectValue placeholder="Select range" />
-          </SelectTrigger>
-          <SelectContent>
-            {RANGE_OPTIONS.map((r) => (
-              <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    );
+  function toggle(opt: string) {
+    if (selected.includes(opt)) {
+      onChange(selected.filter((v) => v !== opt));
+    } else {
+      onChange([...selected, opt]);
+    }
   }
-  const options = DIM_OPTIONS[dim];
+  const count = selected.length;
+  const summary =
+    count === 0 ? `All ${label.toLowerCase()}` :
+    count === 1 ? selected[0] :
+                  `${count} selected`;
+
   return (
     <div className="space-y-1.5">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-9 w-full rounded-lg">
-          <SelectValue placeholder={`All ${label.toLowerCase()}`} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All {label.toLowerCase()}</SelectItem>
-          {options.map((opt) => (
-            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground/80">{summary}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-background p-2">
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className={[
+            "rounded-full px-2.5 py-0.5 text-xs transition-colors",
+            count === 0
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          ].join(" ")}
+        >
+          All
+        </button>
+        {options.map((opt) => {
+          const on = selected.includes(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => toggle(opt)}
+              aria-pressed={on}
+              className={[
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs transition-colors",
+                on
+                  ? "bg-[oklch(0.43_0.17_256_/_0.10)] text-[#0E4DA1] ring-1 ring-[oklch(0.43_0.17_256_/_0.45)] dark:text-primary"
+                  : "border border-border text-muted-foreground hover:border-[oklch(0.83_0.16_88_/_0.45)] hover:text-foreground",
+              ].join(" ")}
+            >
+              {on ? <Check className="size-3" /> : null}
+              {opt}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

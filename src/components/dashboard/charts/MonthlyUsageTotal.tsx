@@ -44,8 +44,8 @@ export function MonthlyUsageTotal() {
     [data],
   );
 
-  const showCatia = effective.cad === "all" || effective.cad === "CATIA";
-  const showNx = effective.cad === "all" || effective.cad === "NX";
+  const showCatia = effective.cad.length === 0 || effective.cad.includes("CATIA");
+  const showNx    = effective.cad.length === 0 || effective.cad.includes("NX");
 
   if (data.length === 0) {
     return (

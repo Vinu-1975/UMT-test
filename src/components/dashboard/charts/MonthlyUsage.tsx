@@ -27,8 +27,8 @@ export function MonthlyUsage() {
   const data = useMemo(() => filterMonthlyCad(effective), [effective]);
   const total = useMemo(() => data.reduce((s, d) => s + d.total, 0), [data]);
 
-  const showCatia = effective.cad === "all" || effective.cad === "CATIA";
-  const showNx = effective.cad === "all" || effective.cad === "NX";
+  const showCatia = effective.cad.length === 0 || effective.cad.includes("CATIA");
+  const showNx    = effective.cad.length === 0 || effective.cad.includes("NX");
 
   return (
     <div className="h-[280px] w-full">

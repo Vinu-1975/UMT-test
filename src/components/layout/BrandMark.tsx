@@ -1,34 +1,23 @@
 /**
- * Reusable Cooper Standard CS swoosh mark.
+ * Cooper Standard CS swoosh mark — official PNG asset.
  *
- * Two interlocking strokes — royal blue outer C and golden yellow inner S.
- * Hex values are pinned so the mark stays brand-correct under both light
- * and dark themes.
+ * The asset lives in `public/cooper-mark.png` (transparent background,
+ * 512×341, RGBA) so it ships unmodified and renders crisply at every
+ * call-site size (18 → 80px). object-contain keeps the swoosh proportional
+ * inside the consumer's square bounding box without distorting it.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Cooper Standard"
-      role="img"
-    >
-      <path
-        d="M44 11 C 27 7, 10 16, 10 32 C 10 48, 26 57, 45 53"
-        stroke="#0E4DA1"
-        strokeWidth="7"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M30 17 C 41 21, 39 32, 28 36 C 17 40, 21 51, 37 51"
-        stroke="#F4B81B"
-        strokeWidth="5.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
+    <img
+      src="/cooper-mark.png"
+      alt="Cooper Standard"
+      draggable={false}
+      className={[
+        "select-none object-contain",
+        className ?? "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    />
   );
 }

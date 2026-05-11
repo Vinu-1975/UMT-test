@@ -1,15 +1,26 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { ChartFilterOverride, FilterDim, FilterState } from "./types";
 
+/** Structural equality check that handles array-valued filter dimensions. */
+function sameFilterValue(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((v, i) => v === sortedB[i]);
+  }
+  return a === b;
+}
+
 export const DEFAULT_FILTERS: FilterState = {
-  range: "ytd",
-  application: "all",
-  cad: "all",
-  productLine: "all",
-  region: "all",
-  domain: "all",
-  hardware: "all",
-  status: "all",
+  range: "thisYear",
+  application: [],
+  cad: [],
+  productLine: [],
+  region: [],
+  domain: [],
+  hardware: [],
+  status: [],
 };
 
 type Ctx = {
@@ -105,7 +116,7 @@ export function useChartFilters(
     () =>
       applicable.reduce((n, dim) => {
         const v = override[dim];
-        return n + (v !== undefined && v !== global[dim] ? 1 : 0);
+        return n + (v !== undefined && !sameFilterValue(v, global[dim]) ? 1 : 0);
       }, 0),
     [override, global, applicable],
   );

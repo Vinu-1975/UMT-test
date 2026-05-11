@@ -219,11 +219,100 @@
   background-image: linear-gradient(
     90deg,
     oklch(0.43 0.17 256) 0%,
-    oklch(0.43 0.17 256) 38%,
+    oklch(0.43 0.17 256) 34%,
     oklch(0.83 0.16 88) 50%,
-    oklch(0.43 0.17 256) 62%,
+    oklch(0.43 0.17 256) 66%,
     oklch(0.43 0.17 256) 100%
   );
+}
+
+/* Vertical sibling of brand-hairline — for the sidebar's right edge.
+   Repeats blue ↔ gold four times down the height so the rail reads as
+   rhythmic banding rather than a single pulse, while still starting and
+   ending in blue for continuity with the top hairline. */
+@utility brand-hairline-v {
+  background-image: linear-gradient(
+    180deg,
+    oklch(0.43 0.17 256) 0%,
+    oklch(0.83 0.16 88) 12.5%,
+    oklch(0.43 0.17 256) 25%,
+    oklch(0.83 0.16 88) 37.5%,
+    oklch(0.43 0.17 256) 50%,
+    oklch(0.83 0.16 88) 62.5%,
+    oklch(0.43 0.17 256) 75%,
+    oklch(0.83 0.16 88) 87.5%,
+    oklch(0.43 0.17 256) 100%
+  );
+}
+
+/* Full-width gold spark — the warm pulse of the swoosh, used as a
+   subtle stripe on KPI cards and section headers. */
+@utility brand-spark {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.83 0.16 88 / 0.55) 18%,
+    oklch(0.83 0.16 88) 50%,
+    oklch(0.83 0.16 88 / 0.55) 82%,
+    transparent 100%
+  );
+}
+
+/* Solid blue → gold → blue stripe for card tops. Slightly richer than
+   the hairline so it reads at the top of a card without competing
+   with the chrome. */
+@utility brand-edge-top {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    background-image: linear-gradient(
+      90deg,
+      oklch(0.43 0.17 256) 0%,
+      oklch(0.43 0.17 256) 30%,
+      oklch(0.83 0.16 88) 50%,
+      oklch(0.43 0.17 256) 70%,
+      oklch(0.43 0.17 256) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+/* Gold left rail — used to mark active rows / important callouts.
+   Reads as a quiet highlight, not a warning. */
+@utility brand-rail-gold {
+  box-shadow: inset 3px 0 0 0 oklch(0.83 0.16 88);
+}
+@utility brand-rail-blue {
+  box-shadow: inset 3px 0 0 0 oklch(0.43 0.17 256);
+}
+
+/* Small two-tone accent: a short blue bar with a gold dot — used
+   under page titles to echo the swoosh. */
+@utility brand-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  &::before {
+    content: "";
+    width: 28px;
+    height: 3px;
+    border-radius: 999px;
+    background: oklch(0.43 0.17 256);
+  }
+  &::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: oklch(0.83 0.16 88);
+    box-shadow: 0 0 0 2px oklch(0.83 0.16 88 / 0.18);
+  }
 }
 
 /* Subtle card hover lift — tinted with the brand blue so even motion
@@ -233,5 +322,32 @@
   &:hover {
     box-shadow: 0 4px 18px -10px oklch(0.43 0.17 256 / 0.16);
     transform: translateY(-1px);
+  }
+}
+
+/* Branded card — pure-white surface with a gold top accent. Used for
+   KPI tiles and other "first read" cards so the brand identity is felt
+   even before content is parsed. */
+@utility brand-card {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    border-radius: 999px;
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      oklch(0.83 0.16 88 / 0.4) 15%,
+      oklch(0.83 0.16 88) 50%,
+      oklch(0.83 0.16 88 / 0.4) 85%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 2;
   }
 }

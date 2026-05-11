@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Activity,
   CalendarDays,
+  Check,
   Cpu,
   Globe2,
   Layers,
@@ -37,11 +38,11 @@ import type {
 } from "@/lib/types";
 
 const RANGES: { id: RangePreset; label: string }[] = [
-  { id: "30d",    label: "30d" },
-  { id: "90d",    label: "90d" },
-  { id: "ytd",    label: "YTD" },
-  { id: "12m",    label: "12 months" },
-  { id: "custom", label: "Custom" },
+  { id: "currentMonth", label: "This month" },
+  { id: "lastMonth",    label: "Last month" },
+  { id: "thisYear",     label: "This year" },
+  { id: "lastYear",     label: "Last year" },
+  { id: "custom",       label: "Custom" },
 ];
 
 type DimConfig = {
@@ -61,75 +62,115 @@ const DIM_CONFIG: Record<Exclude<FilterDim, "range">, DimConfig> = {
   status:      { icon: Activity,          label: "Status",   allLabel: "All statuses",      options: SESSION_STATUSES },
 };
 
-function ChipPopover({
+function MultiChipPopover({
   icon: Icon,
   label,
   options,
-  value,
+  selected,
   onChange,
   allLabel,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   options: readonly string[];
-  value: string;
-  onChange: (next: string) => void;
+  selected: readonly string[];
+  onChange: (next: string[]) => void;
   allLabel: string;
 }) {
-  const display = value === "all" ? allLabel : value;
+  const count = selected.length;
+  let display: string;
+  if (count === 0) display = allLabel;
+  else if (count === 1) display = selected[0];
+  else display = `${count} selected`;
+
+  const isActive = count > 0;
+
+  function toggle(opt: string) {
+    if (selected.includes(opt)) {
+      onChange(selected.filter((v) => v !== opt));
+    } else {
+      onChange([...selected, opt]);
+    }
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           size="sm"
-          className="h-9 gap-2 rounded-full font-normal"
+          className={[
+            "h-9 gap-2 rounded-full font-normal transition-colors",
+            isActive
+              ? "border-[oklch(0.43_0.17_256_/_0.45)] bg-[oklch(0.43_0.17_256_/_0.06)]"
+              : "",
+          ].join(" ")}
         >
           <Icon className="size-4 text-muted-foreground" />
           <span className="text-muted-foreground">{label}:</span>
           <span className="font-medium">{display}</span>
+          {count > 1 ? (
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+              {count}
+            </span>
+          ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-60 p-1">
+      <PopoverContent className="w-64 p-1" align="start">
         <ul className="max-h-72 space-y-0.5 overflow-y-auto">
-          <Option active={value === "all"} label={allLabel} onClick={() => onChange("all")} />
-          {options.map((opt) => (
-            <Option
-              key={opt}
-              active={opt === value}
-              label={opt}
-              onClick={() => onChange(opt)}
-            />
-          ))}
+          <li>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className={[
+                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm",
+                count === 0
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ].join(" ")}
+            >
+              {count === 0 ? allLabel : "Clear selection"}
+              {count === 0 ? <span className="size-1.5 rounded-full bg-primary" /> : null}
+            </button>
+          </li>
+          {options.length > 0 ? (
+            <li aria-hidden className="mx-2 my-1 h-px bg-border" />
+          ) : null}
+          {options.map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <li key={opt}>
+                <button
+                  type="button"
+                  onClick={() => toggle(opt)}
+                  aria-pressed={on}
+                  className={[
+                    "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm",
+                    on
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "hover:bg-muted",
+                  ].join(" ")}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={[
+                        "grid size-4 shrink-0 place-items-center rounded-[5px] border transition-colors",
+                        on
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background",
+                      ].join(" ")}
+                    >
+                      {on ? <Check className="size-3" /> : null}
+                    </span>
+                    {opt}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function Option({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onClick}
-        className={[
-          "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm",
-          active ? "bg-accent text-accent-foreground font-medium" : "hover:bg-muted",
-        ].join(" ")}
-      >
-        {label}
-        {active ? <span className="size-1.5 rounded-full bg-primary" /> : null}
-      </button>
-    </li>
   );
 }
 
@@ -213,7 +254,7 @@ export function ChartFilterChips({
       (effective.range !== DEFAULT_FILTERS.range ||
         Boolean(effective.customFrom) ||
         Boolean(effective.customTo))) ||
-    dimChips.some((d) => effective[d] !== DEFAULT_FILTERS[d]);
+    dimChips.some((d) => (effective[d] as readonly string[]).length > 0);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -252,7 +293,7 @@ export function ChartFilterChips({
                     "rounded-full px-3 py-1 text-sm transition-colors",
                     effective.range === r.id
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      : "text-muted-foreground hover:text-[color:oklch(0.55_0.13_82)] dark:hover:text-[color:oklch(0.83_0.16_88)]",
                   ].join(" ")}
                 >
                   {r.label}
@@ -269,21 +310,21 @@ export function ChartFilterChips({
 
       {dimChips.map((dim) => {
         const cfg = DIM_CONFIG[dim];
-        const value = String(effective[dim]);
+        const selected = effective[dim] as readonly string[];
         return (
-          <ChipPopover
+          <MultiChipPopover
             key={dim}
             icon={cfg.icon}
             label={cfg.label}
             options={cfg.options}
-            value={value}
-            onChange={(v) => {
+            selected={selected}
+            onChange={(next) => {
               if (dim === "hardware") {
-                setOverride({ hardware: v as "all" | Hardware });
+                setOverride({ hardware: next as Hardware[] });
               } else if (dim === "status") {
-                setOverride({ status: v as "all" | SessionStatus });
+                setOverride({ status: next as SessionStatus[] });
               } else {
-                setOverride({ [dim]: v } as ChartFilterOverride);
+                setOverride({ [dim]: next } as ChartFilterOverride);
               }
             }}
             allLabel={cfg.allLabel}

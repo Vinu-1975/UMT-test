@@ -24,16 +24,20 @@ export function Topbar() {
       <div className="ml-auto flex items-center gap-1">
         {/* Cooper Standard brand chip — small CS mark + secured-tenant label.
             Echoes the logo in the header and signals the internal tenant
-            without competing with the wordmark in the sidebar. */}
+            without competing with the wordmark in the sidebar. The thin gold
+            inner stroke ties it to the swoosh in the BrandMark. */}
         <div
-          className="mr-2 hidden items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1.5 lg:flex"
+          className="group/chip relative mr-2 hidden items-center gap-2 overflow-hidden rounded-full border border-[oklch(0.43_0.17_256_/_0.18)] bg-card py-1 pr-3 pl-1.5 shadow-[0_1px_0_0_oklch(0.83_0.16_88_/_0.35)_inset] transition-colors hover:border-[oklch(0.83_0.16_88_/_0.55)] lg:flex"
           aria-label="Cooper Standard tenant"
         >
-          <span className="grid size-6 place-items-center rounded-full bg-primary/8">
+          <span className="grid size-6 place-items-center rounded-full bg-primary/8 ring-1 ring-[oklch(0.83_0.16_88_/_0.45)] transition-shadow group-hover/chip:ring-[oklch(0.83_0.16_88)]">
             <BrandMark className="size-[18px]" />
           </span>
-          <span className="text-[11px] font-semibold tracking-tight text-foreground/85">
-            Cooper Standard
+          <span className="text-[11px] font-semibold tracking-tight">
+            <span className="text-[#0E4DA1] dark:text-primary">Cooper</span>
+            <span className="ml-0.5 text-[color:oklch(0.62_0.13_82)] dark:text-[color:oklch(0.83_0.16_88)]">
+              Standard
+            </span>
           </span>
           <span className="h-3 w-px bg-border" aria-hidden />
           <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">

@@ -31,7 +31,7 @@ const NAV_ADMIN: Item[] = [
 
 function linkClasses(isActive: boolean) {
   return [
-    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
     isActive
       ? "bg-accent text-accent-foreground font-medium"
       : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-accent-foreground",
@@ -44,13 +44,34 @@ function Item({ item }: { item: Item }) {
     <NavLink to={item.to} end={item.to === "/"} className={({ isActive }) => linkClasses(isActive)}>
       {({ isActive }) => (
         <>
+          {/* Gold rail on the active row — picks up the warm half of the
+              CS swoosh and gives the navigation a strong brand anchor. */}
+          {isActive ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-full bg-[oklch(0.83_0.16_88)]"
+            />
+          ) : null}
           <Icon
             className={[
               "size-[18px] shrink-0 transition-colors",
-              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+              // Inactive items lift toward blue on hover; active items keep blue.
+              // The gold rail does the warm half of the swoosh on its own.
+              isActive
+                ? "text-primary"
+                : "text-muted-foreground group-hover:text-[#0E4DA1] dark:group-hover:text-primary",
             ].join(" ")}
           />
-          <span className="truncate">{item.label}</span>
+          <span
+            className={[
+              "truncate transition-colors",
+              isActive
+                ? "text-primary"
+                : "group-hover:text-[#0E4DA1] dark:group-hover:text-primary",
+            ].join(" ")}
+          >
+            {item.label}
+          </span>
         </>
       )}
     </NavLink>
@@ -60,9 +81,16 @@ function Item({ item }: { item: Item }) {
 export function Sidebar() {
   return (
     <aside
-      className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex"
+      className="relative hidden w-64 shrink-0 flex-col bg-sidebar md:flex"
       aria-label="Primary"
     >
+      {/* Vertical brand gradient acting as the sidebar's right border —
+          echoes the horizontal hairline at the top of the viewport so
+          the chrome reads as one continuous frame in CS colours. */}
+      <span
+        aria-hidden
+        className="brand-hairline-v pointer-events-none absolute top-0 right-0 bottom-0 w-[3px]"
+      />
       <div className="px-5 pt-6 pb-4">
         <Logo />
       </div>
@@ -109,8 +137,11 @@ export function Sidebar() {
           <div className="relative flex items-center gap-2">
             <BrandMark className="size-5 shrink-0" />
             <div className="leading-tight">
-              <div className="text-[11px] font-semibold tracking-tight text-foreground/90">
-                Cooper Standard
+              <div className="text-[11px] font-semibold tracking-tight">
+                <span className="text-[#0E4DA1] dark:text-primary">Cooper</span>{" "}
+                <span className="text-[color:oklch(0.62_0.13_82)] dark:text-[color:oklch(0.83_0.16_88)]">
+                  Standard
+                </span>
               </div>
               <div className="text-[10px] text-muted-foreground">
                 UMT v1.0 · Internal

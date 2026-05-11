@@ -47,11 +47,19 @@ export function ChartCard({
     ) : null);
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("card-hover overflow-hidden", className)}>
       <CardHeader className="gap-1.5 pb-2">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+            <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-[#0E4DA1] transition-colors group-hover/card:text-[color:oklch(0.55_0.13_82)] dark:text-primary dark:group-hover/card:text-[color:oklch(0.83_0.16_88)]">
+              {/* Two-stop blue + gold marker — tiny, but consistent on every
+                  chart, so the dashboard reads as Cooper Standard at a glance. */}
+              <span aria-hidden className="inline-flex items-center gap-0.5">
+                <span className="size-1.5 rounded-full bg-[oklch(0.43_0.17_256)]" />
+                <span className="size-1.5 rounded-full bg-[oklch(0.83_0.16_88)]" />
+              </span>
+              {title}
+            </h3>
             {description ? (
               <p className="text-xs text-muted-foreground">{description}</p>
             ) : null}

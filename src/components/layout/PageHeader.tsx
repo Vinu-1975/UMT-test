@@ -10,8 +10,13 @@ export type PageHeaderProps = {
 export function PageHeader({ title, description, action, className }: PageHeaderProps) {
   return (
     <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight md:text-[26px]">{title}</h1>
+      <div className="space-y-2">
+        {/* Blue bar + gold dot — a quiet echo of the CS swoosh that marks
+            every page consistently. */}
+        <span aria-hidden className="brand-accent" />
+        <h1 className="text-2xl font-semibold tracking-tight text-[#0E4DA1] dark:text-primary md:text-[26px]">
+          {title}
+        </h1>
         {description ? (
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {description}

@@ -120,7 +120,12 @@ export interface KpiPoint {
 
 // ── Filter system ────────────────────────────────────────────────
 
-export type RangePreset = "30d" | "90d" | "ytd" | "12m" | "custom";
+export type RangePreset =
+  | "currentMonth"
+  | "lastMonth"
+  | "thisYear"
+  | "lastYear"
+  | "custom";
 
 export type FilterDim =
   | "range"
@@ -132,17 +137,25 @@ export type FilterDim =
   | "hardware"
   | "status";
 
+/**
+ * Filter state. Dimension fields are arrays — empty array means "no filter
+ * applied" (i.e. show everything). A non-empty array is the explicit
+ * selection; multi-select is therefore the default mode.
+ *
+ * `range` stays a single preset because the date window is, semantically,
+ * one continuous interval.
+ */
 export interface FilterState {
   range: RangePreset;
   customFrom?: string;
   customTo?: string;
-  application: string;
-  cad: string;
-  productLine: string;
-  region: string;
-  domain: string;
-  hardware: "all" | Hardware;
-  status: "all" | SessionStatus;
+  application: string[];
+  cad: string[];
+  productLine: string[];
+  region: string[];
+  domain: string[];
+  hardware: Hardware[];
+  status: SessionStatus[];
 }
 
 export type ChartFilterOverride = Partial<FilterState>;

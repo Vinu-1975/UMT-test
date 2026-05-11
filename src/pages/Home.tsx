@@ -45,6 +45,7 @@ export default function HomePage() {
           value={kpis.totalSessions}
           delta={HEADLINE.sessionsDelta}
           icon={Activity}
+          accent="blue"
         />
         <KpiCard
           label="Active users"
@@ -52,6 +53,7 @@ export default function HomePage() {
           delta={HEADLINE.activeUsersDelta}
           icon={Users}
           helpText="vs last week"
+          accent="gold"
         />
         <KpiCard
           label="Applications in use"
@@ -60,6 +62,7 @@ export default function HomePage() {
           icon={AppWindow}
           deltaSuffix=" new"
           helpText="this month"
+          accent="blue"
         />
         <KpiCard
           label="Avg. session length"
@@ -67,6 +70,7 @@ export default function HomePage() {
           delta={HEADLINE.averageSessionDelta}
           icon={Clock}
           deltaSuffix=" min"
+          accent="gold"
         />
       </div>
 

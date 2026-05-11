@@ -27,11 +27,17 @@ export default function SessionsPage() {
 
       <FilterChips />
 
-      <Card>
+      <Card className="card-hover">
         <CardContent className="p-5">
           <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-semibold tracking-tight">Session log</h3>
+            <div className="space-y-1">
+              <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-[#0E4DA1] transition-colors group-hover/card:text-[color:oklch(0.55_0.13_82)] dark:text-primary dark:group-hover/card:text-[color:oklch(0.83_0.16_88)]">
+                <span aria-hidden className="inline-flex items-center gap-0.5">
+                  <span className="size-1.5 rounded-full bg-[oklch(0.43_0.17_256)]" />
+                  <span className="size-1.5 rounded-full bg-[oklch(0.83_0.16_88)]" />
+                </span>
+                Session log
+              </h3>
               <p className="text-xs text-muted-foreground">
                 Showing rows that match the page filters above and any local override.
               </p>
