@@ -39,13 +39,13 @@ export function DomainList() {
                 <span className="truncate font-medium">{d.domain}</span>
               </div>
               <div className="num flex shrink-0 items-baseline gap-3 tabular-nums">
-                <span className="font-medium">{num(d.sessions)}</span>
-                <span className="w-10 text-right text-xs text-muted-foreground">
+                <span className="font-semibold">{num(d.sessions)}</span>
+                <span className="w-12 text-right text-xs text-muted-foreground">
                   {pct(d.sessions / total)}
                 </span>
               </div>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary/80 transition-[width] duration-500"
                 style={{ width: `${widthPct}%` }}

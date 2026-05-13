@@ -92,7 +92,7 @@ export function ApplicationFunctionality() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           Pick an application to see how its functionality is distributed.
         </div>
         <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export function ApplicationFunctionality() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
         <span className="font-medium text-foreground">{activeApp}</span>
         <span className="mx-2">·</span>
         {num(appTotal)} sessions
@@ -138,7 +138,7 @@ export function ApplicationFunctionality() {
               <XAxis
                 type="number"
                 stroke="var(--muted-foreground)"
-                fontSize={12}
+                fontSize={13}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => num(v)}
@@ -147,10 +147,10 @@ export function ApplicationFunctionality() {
                 type="category"
                 dataKey="functionality"
                 stroke="var(--muted-foreground)"
-                fontSize={12}
+                fontSize={13}
                 tickLine={false}
                 axisLine={false}
-                width={170}
+                width={180}
                 tick={{ fill: "var(--foreground)" }}
               />
               <Tooltip
@@ -158,7 +158,8 @@ export function ApplicationFunctionality() {
                   borderRadius: 12,
                   border: "1px solid var(--border)",
                   background: "var(--card)",
-                  fontSize: 12,
+                  fontSize: 13,
+                  padding: "10px 12px",
                 }}
                 cursor={{ fill: "var(--muted)" }}
                 formatter={(v) => {
@@ -177,7 +178,7 @@ export function ApplicationFunctionality() {
                   dataKey="total"
                   position="right"
                   formatter={(v) => num(Number(v))}
-                  style={{ fill: "var(--foreground)", fontSize: 11 }}
+                  style={{ fill: "var(--foreground)", fontSize: 13, fontWeight: 600 }}
                 />
               </Bar>
             </BarChart>

@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   LabelList,
   Legend,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +15,30 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterMonthlyCad } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
+
+// Stack-segment label that only renders when the segment is tall enough to fit
+// readable text. Keeps the bar from getting noisy at small values.
+const renderStackLabel = (fill: string) => (props: any) => {
+  const { x, y, width, height, value } = props;
+  const w = Number(width);
+  const h = Number(height);
+  const v = Number(value);
+  if (!isFinite(v) || v <= 0) return null;
+  if (h < 18 || w < 28) return null;
+  return (
+    <text
+      x={Number(x) + w / 2}
+      y={Number(y) + h / 2}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fill={fill}
+      fontSize={11}
+      fontWeight={700}
+    >
+      {num(v)}
+    </text>
+  );
+};
 
 export const MONTHLY_TOTAL_FILTER: {
   id: string;
@@ -39,13 +64,14 @@ export function MonthlyUsageTotal() {
 
   const data = useMemo(() => filterMonthlyCad(effective), [effective]);
 
-  const grandTotal = useMemo(
-    () => data.reduce((s, d) => s + d.total, 0),
-    [data],
-  );
-
   const showCatia = effective.cad.length === 0 || effective.cad.includes("CATIA");
   const showNx    = effective.cad.length === 0 || effective.cad.includes("NX");
+
+  const average = useMemo(() => {
+    if (data.length === 0) return 0;
+    const total = data.reduce((s, d) => s + d.total, 0);
+    return total / data.length;
+  }, [data]);
 
   if (data.length === 0) {
     return (
@@ -60,32 +86,16 @@ export function MonthlyUsageTotal() {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
-          margin={{ top: 16, right: 12, left: -8, bottom: 0 }}
+          margin={{ top: 24, right: 12, left: -8, bottom: 0 }}
         >
           <defs>
             <linearGradient id="catiaBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--chart-1)"
-                stopOpacity={0.95}
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--chart-1)"
-                stopOpacity={0.6}
-              />
+              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.95} />
+              <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.6} />
             </linearGradient>
             <linearGradient id="nxBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--chart-2)"
-                stopOpacity={0.95}
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--chart-2)"
-                stopOpacity={0.6}
-              />
+              <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.95} />
+              <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.6} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -96,13 +106,13 @@ export function MonthlyUsageTotal() {
           <XAxis
             dataKey="month"
             stroke="var(--muted-foreground)"
-            fontSize={12}
+            fontSize={13}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             stroke="var(--muted-foreground)"
-            fontSize={12}
+            fontSize={13}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v: number) => num(v)}
@@ -113,18 +123,33 @@ export function MonthlyUsageTotal() {
               borderRadius: 12,
               border: "1px solid var(--border)",
               background: "var(--card)",
-              fontSize: 12,
+              fontSize: 13,
+              padding: "10px 12px",
               boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
             }}
             cursor={{ fill: "var(--muted)" }}
-            formatter={(v) => num(Number(v))}
+            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
             labelFormatter={(label) => `Month: ${label}`}
           />
           <Legend
             verticalAlign="top"
             iconType="circle"
-            wrapperStyle={{ paddingBottom: 8, fontSize: 12 }}
+            wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
           />
+          {average > 0 ? (
+            <ReferenceLine
+              y={average}
+              stroke="var(--muted-foreground)"
+              strokeDasharray="4 4"
+              strokeOpacity={0.6}
+              label={{
+                value: `Avg ${num(Math.round(average))}`,
+                position: "insideTopRight",
+                fill: "var(--muted-foreground)",
+                fontSize: 11,
+              }}
+            />
+          ) : null}
           {showCatia && (
             <Bar
               dataKey="CATIA"
@@ -134,12 +159,8 @@ export function MonthlyUsageTotal() {
               maxBarSize={48}
               shape={(props: any) => {
                 const { x, y, width, height, payload } = props;
-
-                const shouldRoundTop =
-                  !showNx || payload.NX === 0;
-
+                const shouldRoundTop = !showNx || payload.NX === 0;
                 const radius = shouldRoundTop ? 8 : 0;
-
                 return (
                   <path
                     d={`
@@ -155,7 +176,12 @@ export function MonthlyUsageTotal() {
                   />
                 );
               }}
-            />
+            >
+              <LabelList
+                dataKey="CATIA"
+                content={renderStackLabel("#ffffff")}
+              />
+            </Bar>
           )}
           {showNx && (
             <Bar
@@ -167,18 +193,21 @@ export function MonthlyUsageTotal() {
               maxBarSize={48}
             >
               <LabelList
+                dataKey="NX"
+                content={renderStackLabel("var(--foreground)")}
+              />
+              <LabelList
                 dataKey="total"
                 position="top"
                 formatter={(v) => num(Number(v))}
                 style={{
                   fill: "var(--foreground)",
-                  fontSize: 11,
-                  fontWeight: 500,
+                  fontSize: 13,
+                  fontWeight: 700,
                 }}
               />
             </Bar>
           )}
-          {/* When only CATIA is shown, put the total label on it */}
           {showCatia && !showNx && (
             <Bar
               dataKey="_hidden"
@@ -193,17 +222,14 @@ export function MonthlyUsageTotal() {
                 formatter={(v) => num(Number(v))}
                 style={{
                   fill: "var(--foreground)",
-                  fontSize: 11,
-                  fontWeight: 500,
+                  fontSize: 13,
+                  fontWeight: 700,
                 }}
               />
             </Bar>
           )}
         </BarChart>
       </ResponsiveContainer>
-      <div className="mt-2 text-center text-xs text-muted-foreground">
-        {num(grandTotal)} total sessions across the selected window
-      </div>
     </div>
   );
 }

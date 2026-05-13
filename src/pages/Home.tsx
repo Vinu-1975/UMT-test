@@ -5,7 +5,11 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
 import { MonthlyUsage, MONTHLY_USAGE_FILTER } from "@/components/dashboard/charts/MonthlyUsage";
-import { HardwareSplit, HARDWARE_SPLIT_FILTER } from "@/components/dashboard/charts/HardwareSplit";
+import {
+  FluidsSealingsSplit,
+  FLUIDS_SEALING_FILTER,
+} from "@/components/dashboard/charts/FluidsSealingsSplit";
+import { RegionBars, REGION_BARS_FILTER } from "@/components/dashboard/charts/RegionBars";
 import { QuickLinks } from "@/components/dashboard/QuickLinks";
 import { useFilters } from "@/lib/filter-context";
 import { filterRawSessions } from "@/lib/filtering";
@@ -85,13 +89,21 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="VDI vs Non-VDI"
-          description="Where are sessions actually running?"
-          filter={HARDWARE_SPLIT_FILTER}
+          title="Fluids vs Sealings"
+          description="How sessions split across the two main product lines."
+          filter={FLUIDS_SEALING_FILTER}
         >
-          <HardwareSplit />
+          <FluidsSealingsSplit />
         </ChartCard>
       </div>
+
+      <ChartCard
+        title="Where in the world is UMT used?"
+        description="Sessions by region for the selected period."
+        filter={REGION_BARS_FILTER}
+      >
+        <RegionBars />
+      </ChartCard>
 
       <ChartCard
         title="Quick actions"

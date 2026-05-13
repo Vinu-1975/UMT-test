@@ -81,7 +81,7 @@ function Item({ item }: { item: Item }) {
 export function Sidebar() {
   return (
     <aside
-      className="relative hidden w-64 shrink-0 flex-col bg-sidebar md:flex"
+      className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto bg-sidebar md:flex"
       aria-label="Primary"
     >
       {/* Vertical brand gradient acting as the sidebar's right border —

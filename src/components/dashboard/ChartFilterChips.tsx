@@ -293,7 +293,7 @@ export function ChartFilterChips({
                     "rounded-full px-3 py-1 text-sm transition-colors",
                     effective.range === r.id
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-[color:oklch(0.55_0.13_82)] dark:hover:text-[color:oklch(0.83_0.16_88)]",
+                      : "text-muted-foreground hover:bg-[oklch(0.83_0.16_88_/_0.22)] hover:text-foreground dark:hover:bg-[oklch(0.83_0.16_88_/_0.25)]",
                   ].join(" ")}
                 >
                   {r.label}

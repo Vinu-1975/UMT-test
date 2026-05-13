@@ -3,6 +3,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -57,18 +58,47 @@ export function CadVsAppMatrix() {
   return (
     <div className="h-[340px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 16, left: -8, bottom: 8 }}>
+        <BarChart data={data} margin={{ top: 24, right: 16, left: -8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="cad" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v: number) => num(v)} width={64} />
-          <Tooltip
-            contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }}
-            cursor={{ fill: "var(--muted)" }}
-            formatter={(v) => num(Number(v))}
+          <XAxis
+            dataKey="cad"
+            stroke="var(--muted-foreground)"
+            fontSize={13}
+            tickLine={false}
+            axisLine={false}
           />
-          <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 8, fontSize: 12 }} />
+          <YAxis
+            stroke="var(--muted-foreground)"
+            fontSize={13}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v: number) => num(v)}
+            width={64}
+          />
+          <Tooltip
+            contentStyle={{
+              borderRadius: 12,
+              border: "1px solid var(--border)",
+              background: "var(--card)",
+              fontSize: 13,
+              padding: "10px 12px",
+            }}
+            cursor={{ fill: "var(--muted)" }}
+            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+          />
+          <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 8, fontSize: 13 }} />
           {topApps.map((appName, i) => (
-            <Bar key={appName} dataKey={appName} name={appName} fill={PALETTE[i % PALETTE.length]} radius={[6, 6, 0, 0]} />
+            <Bar key={appName} dataKey={appName} name={appName} fill={PALETTE[i % PALETTE.length]} radius={[6, 6, 0, 0]}>
+              <LabelList
+                dataKey={appName}
+                position="top"
+                formatter={(v) => {
+                  const n = Number(v);
+                  return n > 0 ? num(n) : "";
+                }}
+                style={{ fill: "var(--foreground)", fontSize: 11, fontWeight: 600 }}
+              />
+            </Bar>
           ))}
         </BarChart>
       </ResponsiveContainer>

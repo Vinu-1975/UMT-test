@@ -13,10 +13,9 @@ import {
   APPLICATION_USAGE,
   CAD_USAGE,
   DOMAIN_USAGE,
-  HARDWARE_SPLIT,
+  FLUIDS_SEALING_SPLIT,
   MONTHLY_CAD_USAGE,
   MONTHLY_USAGE,
-  PROD_TEST_SPLIT,
   RAW_SESSIONS,
   REGION_USAGE,
 } from "./mock-data";
@@ -162,19 +161,17 @@ export function filterDomainUsage(filters: FilterState): DomainUsage[] {
   return filtered.map((d) => ({ ...d, sessions: Math.round(d.sessions * scale) }));
 }
 
-export function filterHardwareSplit(filters: FilterState) {
+export function filterFluidsSealingsSplit(filters: FilterState) {
   const scale = approximateUsageScale(filters);
-  if (filters.hardware.length > 0) {
-    return HARDWARE_SPLIT
-      .filter((h) => filters.hardware.includes(h.name as FilterState["hardware"][number]))
-      .map((h) => ({ ...h, value: Math.round(h.value * scale) }));
-  }
-  return HARDWARE_SPLIT.map((h) => ({ ...h, value: Math.round(h.value * scale) }));
-}
-
-export function filterProdTestSplit(filters: FilterState) {
-  const scale = approximateUsageScale(filters);
-  return PROD_TEST_SPLIT.map((p) => ({ ...p, value: Math.round(p.value * scale) }));
+  // The donut is itself a product-line breakdown. If the user has narrowed
+  // productLine, hide the slices that fall outside the selection.
+  const lines = filters.productLine;
+  return FLUIDS_SEALING_SPLIT
+    .filter((p) =>
+      lines.length === 0 ||
+      lines.includes(p.name === "Fluids" ? "FLUIDS" : "SEALING"),
+    )
+    .map((p) => ({ ...p, value: Math.round(p.value * scale) }));
 }
 
 export function filterRawSessions(filters: FilterState): RawSessionRow[] {

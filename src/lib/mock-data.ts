@@ -194,19 +194,13 @@ export const MONTHLY_CAD_USAGE: MonthlyCadUsagePoint[] = MONTH_LABELS.map((m, i)
   total: monthlyCad[i]!.CATIA + monthlyCad[i]!.NX,
 }));
 
-// ── Hardware split + Production/Test split ──────────────────────
-const vdiSessions = RAW_SESSIONS.filter((s) => s.hardware === "VDI").length;
-const nonVdiSessions = RAW_SESSIONS.length - vdiSessions;
-const prodSessions = RAW_SESSIONS.filter((s) => s.isProd).length;
-const testSessions = RAW_SESSIONS.length - prodSessions;
+// ── Fluids vs Sealings split (product-line donut) ───────────────
+const fluidsSessions = RAW_SESSIONS.filter((s) => s.productLine === "FLUIDS").length;
+const sealingSessions = RAW_SESSIONS.filter((s) => s.productLine === "SEALING").length;
 
-export const HARDWARE_SPLIT = [
-  { name: "VDI", value: vdiSessions },
-  { name: "Non-VDI", value: nonVdiSessions },
-];
-export const PROD_TEST_SPLIT = [
-  { name: "Production", value: prodSessions },
-  { name: "Test", value: testSessions },
+export const FLUIDS_SEALING_SPLIT = [
+  { name: "Fluids", value: fluidsSessions },
+  { name: "Sealings", value: sealingSessions },
 ];
 
 // ── Headline KPIs (real data) ───────────────────────────────────

@@ -3,7 +3,7 @@ UMT2 — Cooper Standard Theming & Filter Refactor
 Tracker (chronological)
 ================================================================
 
-Last updated: 2026-05-11
+Last updated: 2026-05-13 (sections 14–16 added)
 
 ----------------------------------------------------------------
 1. INITIAL BRAND THEMING PASS
@@ -205,6 +205,214 @@ SUPPORTING ARTIFACTS (not shipped)
       Auto-trims and downscales cooper_logo.png to
       public/cooper-mark.png. Re-runnable.
 
+----------------------------------------------------------------
+8. CLEANUP: AUTO-GENERATED ROOT JUNK FILES
+----------------------------------------------------------------
+Request: Clean up random files in the UMT2 root that were
+generated accidentally.
+
+  - Deleted 11 zero-byte files via PowerShell Remove-Item
+    -LiteralPath (names contained regex-special characters):
+      ({,  {,  0,  0),  0.18,  a.cad,  a.productLine,
+      b[1],  u.region,  effective.cad.length,  span.rose
+  - Intentionally kept: __capture.mjs (Playwright screenshot
+    script), __shots/ (its output), tracker.txt, Designer.png,
+    cooper_logo.png.
+
+----------------------------------------------------------------
+9. CHART SWAP: REMOVE VDI/PRODTEST, ADD FLUIDS-SEALINGS + REGION
+----------------------------------------------------------------
+Request: Remove the production-vs-test and VDI-vs-non-VDI graphs.
+Add a fluids-vs-sealings graph and a region-wise usage graph.
+
+Data (src/lib/mock-data.ts):
+  - Removed HARDWARE_SPLIT and PROD_TEST_SPLIT exports plus their
+    helper locals (vdiSessions/nonVdiSessions/prodSessions/
+    testSessions).
+  - Added FLUIDS_SEALING_SPLIT computed from RAW_SESSIONS
+    productLine (FLUIDS=769, SEALING=1026).
+
+Filtering (src/lib/filtering.ts):
+  - Removed filterHardwareSplit and filterProdTestSplit.
+  - Added filterFluidsSealingsSplit: respects productLine
+    multi-select and uppercases "Fluids"/"Sealings" back to
+    data values.
+
+Components:
+  - Deleted charts/HardwareSplit.tsx and charts/ProdTestSplit.tsx.
+  - Added charts/FluidsSealingsSplit.tsx mirroring the
+    HardwareSplit pattern but with brand colors (chart-1 blue,
+    chart-2 gold).
+
+Pages:
+  - src/pages/Home.tsx
+      - VDI slot replaced with Fluids vs Sealings card.
+      - New full-width "Where in the world is UMT used?" card
+        with RegionBars sits between donut row and Quick actions.
+  - src/pages/Reports.tsx
+      - Two-up Hardware + ProdTest grid replaced with a single
+        full-width Fluids vs Sealings card.
+      - Existing region card on Reports left untouched.
+
+----------------------------------------------------------------
+10. NEUTRAL CHART PALETTE (REMOVE BRAND BLUE/GOLD FROM CHARTS)
+----------------------------------------------------------------
+Request: Charts shouldn't carry the logo theme (blue + yellow).
+Use a usual chart palette.
+
+  - src/index.css
+      Replaced --chart-1..6 values in both :root and .dark.
+      Light: orange-red / teal / dark blue / yellow / amber /
+             violet (shadcn defaults).
+      Dark:  indigo / green / amber / violet / red / azure.
+      Brand chrome elsewhere (hairlines, KPI accents, primary
+      buttons, sidebar rail, brand-* utilities) is untouched.
+
+----------------------------------------------------------------
+11. INFORMATION-DENSE CHARTS FOR A 50+ AUDIENCE
+----------------------------------------------------------------
+Request: Add more information into each chart. Audience is in
+their 50s.
+
+First attempt (later reverted in step 12, kept readability bumps):
+  - Built ChartInsights.tsx — reusable strip with a plain-English
+    headline + 3-5 stat tiles (leader, total, average, runner-up,
+    direction, etc.).
+  - Wired insights into every chart (Monthly, MonthlyTotal,
+    AppDonut, AppBars, AppFunctionality, CadBars, CadMatrix,
+    RegionBars, DomainList, FluidsSealings).
+
+Permanent readability bumps (kept):
+  - ChartCard title text-base -> text-lg (16 -> 18px).
+  - ChartCard description text-xs -> text-sm with leading-relaxed.
+  - Axis ticks 11-12px -> 13px in every chart.
+  - Bar-top / bar-end value labels 11 -> 13px, weight 600/700.
+  - Tooltip font 12 -> 13px with 10/12 padding and
+    "1,247 sessions" wording instead of bare numbers.
+  - Legend font 12 -> 13px.
+  - Donut center number text-xl -> text-2xl, legend text-sm ->
+    text-base, swatches 10px -> 12px.
+  - DomainList progress-bar height 8 -> 10px.
+  - RegionBars y-axis spells out region names (North America,
+    Europe, Asia, South America) instead of NA/EU/ASIA/SA.
+  - ReferenceLine for the period average added to MonthlyUsage,
+    MonthlyUsageTotal, CadBars, RegionBars.
+
+----------------------------------------------------------------
+12. INLINE LABELS — EVERY VALUE VISIBLE WITHOUT HOVER
+----------------------------------------------------------------
+Request: Even without hovering, every bar / slice / point should
+show its value.
+
+  - charts/SplitDonut.tsx
+      Two-line inside-slice label (value above, percentage below)
+      in white with subtle dark stroke via paintOrder. Slices
+      under 4% drop the label. Donut grown to 240x240 with outer
+      radius 100.
+  - charts/ApplicationDonut.tsx
+      Same inside-slice value+percentage label for each of the
+      6 slices. Outer radius 110 in a 260x260 container.
+  - charts/MonthlyUsage.tsx (Home, area)
+      LabelList on each Area so every CATIA point is labeled
+      above in blue and every NX point is labeled below in green.
+  - charts/MonthlyUsageTotal.tsx (Reports, stacked bars)
+      Inside-segment labels for CATIA (white) and NX (foreground)
+      via renderStackLabel that hides labels for tiny segments
+      (h<18 or w<28). Monthly total label remains above each bar.
+  - charts/ApplicationBars.tsx (stacked categories)
+      Each stack segment (Validation, Execution, Block creation,
+      Viewing) labeled inside with renderStackLabel. Bar total
+      above. Top margin bumped to 28 to fit the total.
+  - charts/CadVsAppMatrix.tsx (grouped bars)
+      LabelList position="top" on every app bar inside each CAD
+      group; zero values render as "".
+
+----------------------------------------------------------------
+13. REMOVE INSIGHT CARDS (KEEP INLINE LABELS)
+----------------------------------------------------------------
+Request: Remove the insight stat-tile cards added in step 11 —
+the inline labels are enough.
+
+  - Stripped ChartInsights import + headline/items useMemo +
+    JSX from every chart (Fluids, Monthly, MonthlyTotal,
+    AppDonut, AppBars, AppFunctionality, CadBars, CadMatrix,
+    RegionBars, DomainList). Each chart reverts to its raw
+    chart container, no wrapping space-y-4 needed.
+  - Deleted charts/ChartInsights.tsx.
+  - Step-11 readability bumps (font sizes, ChartCard title/
+    description, ReferenceLines for average) are kept.
+  - Step-12 inline labels are kept.
+
+----------------------------------------------------------------
+14. CHART-CARD BRAND SHADOW (BLUE + GOLD GLOW)
+----------------------------------------------------------------
+Request: Add a blue/yellow shadow effect to each chart card.
+Show it by default (not on hover) and make it strong, then tone
+it back down to a softer level.
+
+  - src/index.css
+      Added new utility card-brand-shadow (light + .dark
+      variants). Two layers per color: a wide soft ambient
+      (28px blur, -12px spread) plus a tighter inner glow
+      (10px blur, -4px spread). Negative X-offset for the blue
+      half (left/bottom), positive X-offset for the gold half
+      (right/bottom) so the two brand colors split across
+      opposite sides rather than muddying together.
+      Light alphas: blue 0.32/0.20, gold 0.38/0.24.
+      Dark  alphas: blue 0.45/0.30, gold 0.35/0.22.
+      No hover variant — the shadow is always-on by design.
+  - src/components/dashboard/ChartCard.tsx
+      Single Card className flip: card-hover -> card-brand-shadow.
+      card-hover removed at the same site to avoid stacking two
+      competing box-shadows.
+      KPI tiles and Sessions/VdiUsers cards intentionally kept
+      on card-hover (out of scope).
+
+----------------------------------------------------------------
+15. STICKY SIDEBAR (FIX EMPTINESS ON LONG PAGES)
+----------------------------------------------------------------
+Request: Make the sidebar stay fixed while scrolling long pages
+like Reports — otherwise the sidebar feels empty mid-scroll.
+
+  - src/components/layout/Sidebar.tsx
+      <aside> classes:
+        relative ... w-64 shrink-0 flex-col bg-sidebar md:flex
+      ->
+        sticky top-0 hidden h-screen w-64 shrink-0 flex-col
+        overflow-y-auto bg-sidebar md:flex
+      Sidebar now pins to the viewport at h-screen so the logo,
+      nav, and help/brand sign-off stay visible the entire scroll.
+      overflow-y-auto lets the sidebar scroll internally on short
+      viewports where its own content would clip.
+      The right-edge brand-hairline-v stripe still works because
+      sticky elements establish a positioning context for the
+      absolute child.
+
+----------------------------------------------------------------
+16. APPLICATION DONUT — ALL APPS (REMOVE TOP-6 CAP)
+----------------------------------------------------------------
+Request: Pie chart should include every application, not just
+the top 6.
+
+  - src/components/dashboard/charts/ApplicationDonut.tsx
+      Removed TOP_N = 6 slicing and the separate tailTotal sum.
+      Dataset is now the full sorted application list; grand
+      total covers the full set so slice percentages no longer
+      divide by an inflated tail-adjusted denominator.
+      Added colorAt(i, total) helper:
+        First 6 slices use brand palette (--chart-1..6).
+        Beyond index 5, colors are generated by walking the
+        oklch hue wheel at fixed lightness (0.68) and chroma
+        (0.16) with hue step = 360 / (total - 6) + 18° offset
+        so every application slice gets a visually distinct
+        color even when the count grows past the brand palette.
+      Center label "across top 6 apps" -> "across N apps"
+      where N is the actual filtered count.
+      Legend <ul> now has max-h-[320px] overflow-y-auto pr-1
+      and a truncate on the secondary (cad · productLine) text
+      so a long application list stays scrollable instead of
+      pushing the page layout.
+
 ================================================================
 VERIFICATION
 ================================================================
@@ -218,3 +426,4 @@ After each change:
   - Playwright screenshots of all 5 routes confirmed the brand
     chrome, multi-select popover, and new range presets render
     correctly.
+\

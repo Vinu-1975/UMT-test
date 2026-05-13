@@ -11,8 +11,10 @@ import { CadBars, CAD_BARS_FILTER } from "@/components/dashboard/charts/CadBars"
 import { CadVsAppMatrix, CAD_MATRIX_FILTER } from "@/components/dashboard/charts/CadVsAppMatrix";
 import { RegionBars, REGION_BARS_FILTER } from "@/components/dashboard/charts/RegionBars";
 import { DomainList, DOMAIN_LIST_FILTER } from "@/components/dashboard/charts/DomainList";
-import { HardwareSplit, HARDWARE_SPLIT_FILTER } from "@/components/dashboard/charts/HardwareSplit";
-import { ProdTestSplit, PROD_TEST_FILTER } from "@/components/dashboard/charts/ProdTestSplit";
+import {
+  FluidsSealingsSplit,
+  FLUIDS_SEALING_FILTER,
+} from "@/components/dashboard/charts/FluidsSealingsSplit";
 
 export default function ReportsPage() {
   return (
@@ -98,24 +100,14 @@ export default function ReportsPage() {
           </ChartCard>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <ChartCard
-            title="VDI or local hardware?"
-            description="Where the work is actually being done."
-            filter={HARDWARE_SPLIT_FILTER}
-            filterStyle="chips"
-          >
-            <HardwareSplit />
-          </ChartCard>
-          <ChartCard
-            title="Production vs test sessions"
-            description="How much of the workload is actual production vs trial runs."
-            filter={PROD_TEST_FILTER}
-            filterStyle="chips"
-          >
-            <ProdTestSplit />
-          </ChartCard>
-        </div>
+        <ChartCard
+          title="Fluids vs Sealings"
+          description="How sessions split across the two main product lines."
+          filter={FLUIDS_SEALING_FILTER}
+          filterStyle="chips"
+        >
+          <FluidsSealingsSplit />
+        </ChartCard>
       </div>
     </div>
   );
