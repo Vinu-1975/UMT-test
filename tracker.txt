@@ -3,7 +3,7 @@ UMT2 — Cooper Standard Theming & Filter Refactor
 Tracker (chronological)
 ================================================================
 
-Last updated: 2026-05-13 (sections 14–16 added)
+Last updated: 2026-05-14 (sections 17–20 added)
 
 ----------------------------------------------------------------
 1. INITIAL BRAND THEMING PASS
@@ -412,6 +412,138 @@ the top 6.
       and a truncate on the secondary (cad · productLine) text
       so a long application list stays scrollable instead of
       pushing the page layout.
+
+----------------------------------------------------------------
+17. CHART PALETTE BACK TO COMPANY LOGO THEME
+----------------------------------------------------------------
+Request: Revert the graphs to the company logo theme (blue + gold).
+The shadcn neutral palette set in section 10 made charts read as
+generic data and disconnected from the rest of the brand chrome.
+
+  - src/index.css
+      Rewrote --chart-1..6 in both :root and .dark to walk the
+      Cooper Standard story blue -> gold:
+        chart-1  brand blue (deep)
+        chart-2  mid blue
+        chart-3  sky / cool
+        chart-4  warm amber
+        chart-5  brand gold
+        chart-6  bronze
+      Light mode L range 0.43-0.83; dark mode L lifted to 0.70-
+      0.85 for legibility on the dark canvas. Every chart that
+      consumes var(--chart-N) (Monthly area+stacked, KPI trend,
+      CAD bars, region bars, fluids-sealings split, both split
+      donuts, app bars, app-functionality matrix, application
+      donut) re-themes automatically with this one change.
+  - src/components/dashboard/charts/ApplicationDonut.tsx
+      colorAt(i, total) procedural fallback for apps > 6 no
+      longer walks the full hue wheel. It now alternates between
+      brand-blue (~250 deg) and brand-gold (~80 deg) and steps
+      lightness across [0.50, 0.82] so extra slices remain
+      distinct without leaving the brand colour story.
+
+----------------------------------------------------------------
+18. 2026 USAGE DATA APPENDED FROM REPORT CSV
+----------------------------------------------------------------
+Request: Include this 2026 data too inside the dashboard.
+Source: c:\Users\vinay\Downloads\MyReport_UsageData_2026-05-12.csv
+(45,570 rows; 31,980 dated 2025, 13,590 dated 2026).
+
+User confirmed via AskUserQuestion: append the 2026 rows only,
+leaving the existing 1,836 2025 sessions untouched.
+
+  - scripts/__import-2026.mjs (new, re-runnable + idempotent)
+      Reads raw-sessions.json, drops any previously-imported
+      2026 rows, parses the CSV (skipping the 2 preamble lines
+      + header line), filters to rows where StartDate ends in
+      /2026, and maps CSV columns -> RawSessionRow:
+        ApplicationName  -> application (uppercased)
+        Functionality    -> functionality (uppercased)
+        cadTool          -> cad
+        ProductLine      -> productLine (uppercased; this
+                            normalises "NOT AVAILABLE" /
+                            "Not Available" duplicates)
+        Status           -> status (Success -> Completed)
+        Region           -> region
+        StartDate        -> startTime (with synthesized time)
+        StopDate         -> stopTime  (start + 2-35 minutes)
+        isVDI            -> hardware (TRUE -> VDI else Non-VDI)
+        isProd           -> isProd (boolean)
+      Fields not present in the CSV (id, srNo, user, machine,
+      domain, time-of-day) are synthesized via a seeded
+      mulberry32 PRNG (seed 20260512) so output is reproducible.
+      user/machine/domain are sampled from the existing pools
+      (78 users / 76 machines / 8 domains) so VDI and Domain
+      pages stay coherent.
+  - src/lib/data/raw-sessions.json
+      Grew from 1,836 -> 15,426 rows.
+      All charts that derive from RAW_SESSIONS pick the new
+      data up automatically (KPIs, app donut, app/CAD/region
+      bars, fluids-sealings split, application-functionality
+      matrix, monthly usage, sessions table).
+  - scripts/__smoke-aggregates.mjs (new, dev-only)
+      Prints headline + monthly + product-line + region
+      breakdown for eyeball-verifying the import.
+
+Build size impact: gzipped JS bundle ~324 KB -> ~723 KB. Raw
+JS bundle ~1.5 MB -> ~5.9 MB. Acceptable for an internal
+dashboard.
+
+----------------------------------------------------------------
+19. FIX "THIS YEAR" MONTHLY CHART (WRONG MONTHS)
+----------------------------------------------------------------
+Request (with screenshot): When "This year" is selected and the
+current month is May 2026, the Monthly Usage chart shows Aug-Dec
+instead of Jan-May.
+
+Root cause was two stacked bugs:
+  (a) MONTHLY_USAGE / MONTHLY_CAD_USAGE were being built as a
+      fixed Jan-Dec calendar array. rangeSlice() in filtering.ts
+      was tail-based (slice(-(currentMonth+1))), which assumes
+      a rolling 12-month window ending at the current month.
+      Slicing the last 5 of a Jan-Dec array gives Aug-Dec, not
+      Jan-May.
+  (b) Even with (a) fixed, the calendar shape conflated 2025
+      and 2026 sessions into the same buckets, so "Jan"
+      contained Jan 2025 + Jan 2026 piled together. Selecting
+      "This year" would still mix years.
+
+  - src/lib/mock-data.ts
+      Replaced the Jan-Dec arrays with a true rolling 12-month
+      window. ROLLING_BUCKETS is built from today's calendar
+      month going back 11 months; each bucket carries (year,
+      month, label). Labels include the two-digit year
+      ("Jan '26", "May '26") so the year boundary is visible
+      on the X-axis when the window straddles years.
+      Session aggregation now keys on (year, month) via a
+      bucketIndex Map, so a 2025 January session lands in a
+      different bucket than a 2026 January session.
+  - src/lib/filtering.ts
+      rangeSlice() doc comment tightened to describe the
+      rolling shape ("oldest -> newest, newest = current
+      month"). The slice math itself didn't need to change -
+      it was already correct for a rolling window.
+  - scripts/__smoke-monthly.mjs (new, dev-only)
+      Prints the full 12-bucket rolling window and the slices
+      that "This year / This month / Last month" would return.
+      Verified: This year = Jan '26..May '26; This month =
+      May '26; Last month = Apr '26.
+
+----------------------------------------------------------------
+20. APPLICATION DONUT — LARGER PIE
+----------------------------------------------------------------
+Request: Make the pie chart bigger.
+
+  - src/components/dashboard/charts/ApplicationDonut.tsx
+      Donut container 260x260 -> 360x360. Grid column matched:
+        md:grid-cols-[260px_1fr] -> md:grid-cols-[360px_1fr].
+      Pie radii innerRadius 58 -> 80, outerRadius 110 -> 152
+      (same ring thickness ratio, bigger overall footprint).
+      In-slice label fonts bumped: value 11 -> 13px, percentage
+      10 -> 11px (offsets retuned to y±8). Center "Total
+      sessions" number text-2xl -> text-3xl.
+      Legend max height 320 -> 360 to match the taller donut so
+      the two halves stay vertically aligned.
 
 ================================================================
 VERIFICATION

@@ -165,30 +165,57 @@ export const DOMAIN_USAGE: DomainUsage[] = [...domainCounts.entries()]
   .sort((a, b) => b.sessions - a.sessions);
 
 // ── Monthly usage (production vs test) ─────────────────────────
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const monthly: { production: number; test: number }[] = MONTH_LABELS.map(() => ({ production: 0, test: 0 }));
+// Build a rolling 12-month window ending at the current calendar month.
+// This shape is what the rangeSlice() presets in filtering.ts assume:
+// "This month" = last bucket, "This year" = last (currentMonth+1) buckets,
+// "Last year" = all 12. Labels include the two-digit year ("Jan '26") so
+// the window stays readable when it crosses a year boundary.
+const MONTH_LABELS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const today = new Date();
+type RollingBucket = { year: number; month: number; label: string };
+const ROLLING_BUCKETS: RollingBucket[] = (() => {
+  const out: RollingBucket[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    out.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      label: `${MONTH_LABELS_SHORT[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`,
+    });
+  }
+  return out;
+})();
+const bucketIndex = new Map<string, number>(
+  ROLLING_BUCKETS.map((b, i) => [`${b.year}-${b.month}`, i]),
+);
+
+const monthly: { production: number; test: number }[] = ROLLING_BUCKETS.map(() => ({ production: 0, test: 0 }));
 for (const s of RAW_SESSIONS) {
-  const monthIdx = parseInt(s.startTime.slice(5, 7), 10) - 1;
-  if (monthIdx < 0 || monthIdx > 11) continue;
-  if (s.isProd) monthly[monthIdx]!.production++;
-  else monthly[monthIdx]!.test++;
+  const y = parseInt(s.startTime.slice(0, 4), 10);
+  const m = parseInt(s.startTime.slice(5, 7), 10) - 1;
+  const idx = bucketIndex.get(`${y}-${m}`);
+  if (idx === undefined) continue;
+  if (s.isProd) monthly[idx]!.production++;
+  else monthly[idx]!.test++;
 }
-export const MONTHLY_USAGE: MonthlyUsagePoint[] = MONTH_LABELS.map((m, i) => ({
-  month: m,
+export const MONTHLY_USAGE: MonthlyUsagePoint[] = ROLLING_BUCKETS.map((b, i) => ({
+  month: b.label,
   production: monthly[i]!.production,
   test: monthly[i]!.test,
 }));
 
 // Monthly usage broken down by CAD platform (CATIA / NX) for the home page.
-const monthlyCad: { CATIA: number; NX: number }[] = MONTH_LABELS.map(() => ({ CATIA: 0, NX: 0 }));
+const monthlyCad: { CATIA: number; NX: number }[] = ROLLING_BUCKETS.map(() => ({ CATIA: 0, NX: 0 }));
 for (const s of RAW_SESSIONS) {
-  const monthIdx = parseInt(s.startTime.slice(5, 7), 10) - 1;
-  if (monthIdx < 0 || monthIdx > 11) continue;
-  if (s.cad === "CATIA") monthlyCad[monthIdx]!.CATIA++;
-  else if (s.cad === "NX") monthlyCad[monthIdx]!.NX++;
+  const y = parseInt(s.startTime.slice(0, 4), 10);
+  const m = parseInt(s.startTime.slice(5, 7), 10) - 1;
+  const idx = bucketIndex.get(`${y}-${m}`);
+  if (idx === undefined) continue;
+  if (s.cad === "CATIA") monthlyCad[idx]!.CATIA++;
+  else if (s.cad === "NX") monthlyCad[idx]!.NX++;
 }
-export const MONTHLY_CAD_USAGE: MonthlyCadUsagePoint[] = MONTH_LABELS.map((m, i) => ({
-  month: m,
+export const MONTHLY_CAD_USAGE: MonthlyCadUsagePoint[] = ROLLING_BUCKETS.map((b, i) => ({
+  month: b.label,
   CATIA: monthlyCad[i]!.CATIA,
   NX: monthlyCad[i]!.NX,
   total: monthlyCad[i]!.CATIA + monthlyCad[i]!.NX,

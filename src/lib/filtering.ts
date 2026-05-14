@@ -23,15 +23,16 @@ import {
 // ── Range helpers ──────────────────────────────────────────────────────
 
 /**
- * Slice arguments to apply against a 12-bucket monthly dataset whose last
- * entry is the current month. Returned as `[start, end?]` so callers can
- * spread directly into `Array.prototype.slice`.
+ * Slice arguments to apply against the 12-bucket rolling monthly dataset
+ * built in mock-data.ts (oldest → newest, newest = current month).
+ * Returned as `[start, end?]` so callers can spread it straight into
+ * `Array.prototype.slice`.
  *
- *   currentMonth → last entry only
- *   lastMonth    → the entry just before the last
- *   thisYear     → from start of year through current month
- *   lastYear     → full 12-month window (mock data has no separate
- *                  last-year array, so this mirrors a year-length view)
+ *   currentMonth → last entry only (i.e. the current calendar month)
+ *   lastMonth    → the entry just before the last (previous month)
+ *   thisYear     → tail entries from January of the current year through
+ *                  the current month (currentMonth + 1 entries)
+ *   lastYear     → the full 12-month rolling window
  */
 export function rangeSlice(filters: FilterState): [number, number?] {
   switch (filters.range) {

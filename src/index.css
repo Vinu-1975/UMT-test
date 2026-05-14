@@ -112,15 +112,15 @@
     --input: oklch(0.92 0.005 250);
     --ring: oklch(0.43 0.17 256 / 0.45);
 
-    /* charts — neutral multi-hue palette (shadcn defaults).
-       Kept distinct from the brand blue/gold so charts read
-       as data, not as the logo. */
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --chart-6: oklch(0.55 0.18 305);
+    /* charts — Cooper Standard brand palette walking blue -> gold
+       so every graph reads in the company colours. Lightness is
+       stepped to keep adjacent slices distinguishable. */
+    --chart-1: oklch(0.43 0.17 256);   /* brand blue (deep) */
+    --chart-2: oklch(0.58 0.15 250);   /* mid blue */
+    --chart-3: oklch(0.72 0.13 230);   /* sky / cool */
+    --chart-4: oklch(0.75 0.14 65);    /* warm amber */
+    --chart-5: oklch(0.83 0.16 88);    /* brand gold */
+    --chart-6: oklch(0.62 0.13 75);    /* deep bronze */
 
     --radius: 0.75rem;                 /* precise, but not severe */
 
@@ -169,12 +169,14 @@
     --input: oklch(1 0 0 / 0.14);
     --ring: oklch(0.72 0.14 256 / 0.55);
 
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --chart-6: oklch(0.74 0.14 244);
+    /* Dark-mode brand palette — same blue->gold story, but with
+       lighter L for legibility on the dark canvas. */
+    --chart-1: oklch(0.72 0.14 256);   /* brand blue */
+    --chart-2: oklch(0.78 0.12 248);   /* lighter blue */
+    --chart-3: oklch(0.82 0.11 230);   /* sky / cool */
+    --chart-4: oklch(0.82 0.15 65);    /* warm amber */
+    --chart-5: oklch(0.85 0.16 88);    /* brand gold */
+    --chart-6: oklch(0.70 0.13 75);    /* bronze */
 
     --sidebar: oklch(0.20 0.022 256);
     --sidebar-foreground: oklch(0.92 0.005 250);

@@ -19,15 +19,20 @@ const PALETTE = [
   "var(--chart-6)",
 ];
 
-// Beyond the brand palette, generate visually distinct colors by walking the
-// oklch hue wheel at fixed lightness/chroma so every application gets its own
-// slice color when the dataset exceeds 6 apps.
+// Beyond the brand palette, stay on-brand by alternating between
+// Cooper Standard blue (~250°) and gold (~80°) hues and stepping
+// lightness so every slice past index 5 remains visually distinct
+// without leaving the company colour story.
 function colorAt(i: number, total: number): string {
   if (i < PALETTE.length) return PALETTE[i];
+  const k = i - PALETTE.length;
   const extras = Math.max(total - PALETTE.length, 1);
-  const step = 360 / extras;
-  const hue = ((i - PALETTE.length) * step + 18) % 360;
-  return `oklch(0.68 0.16 ${hue.toFixed(1)})`;
+  const hue = k % 2 === 0 ? 250 : 80;
+  const steps = Math.max(Math.ceil(extras / 2), 1);
+  const t = steps === 1 ? 0 : Math.floor(k / 2) / (steps - 1);
+  const L = 0.50 + t * 0.32;
+  const C = k % 2 === 0 ? 0.15 : 0.16;
+  return `oklch(${L.toFixed(2)} ${C} ${hue})`;
 }
 
 export function ApplicationDonut() {
@@ -50,8 +55,8 @@ export function ApplicationDonut() {
   }
 
   return (
-    <div className="grid items-center gap-6 md:grid-cols-[260px_1fr]">
-      <div className="relative mx-auto h-[260px] w-[260px]">
+    <div className="grid items-center gap-6 md:grid-cols-[360px_1fr]">
+      <div className="relative mx-auto h-[360px] w-[360px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
@@ -68,8 +73,8 @@ export function ApplicationDonut() {
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius={58}
-              outerRadius={110}
+              innerRadius={80}
+              outerRadius={152}
               paddingAngle={2}
               stroke="var(--card)"
               strokeWidth={3}
@@ -85,11 +90,11 @@ export function ApplicationDonut() {
                   <g>
                     <text
                       x={x}
-                      y={y - 7}
+                      y={y - 8}
                       fill="#ffffff"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      fontSize={11}
+                      fontSize={13}
                       fontWeight={700}
                       style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
                     >
@@ -97,11 +102,11 @@ export function ApplicationDonut() {
                     </text>
                     <text
                       x={x}
-                      y={y + 7}
+                      y={y + 8}
                       fill="#ffffff"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      fontSize={10}
+                      fontSize={11}
                       fontWeight={600}
                       style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
                     >
@@ -120,12 +125,12 @@ export function ApplicationDonut() {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Total sessions</div>
-          <div className="num mt-0.5 text-2xl font-semibold">{num(grand)}</div>
+          <div className="num mt-0.5 text-3xl font-semibold">{num(grand)}</div>
           <div className="text-xs text-muted-foreground">across {apps.length} apps</div>
         </div>
       </div>
 
-      <ul className="max-h-[320px] space-y-1.5 overflow-y-auto pr-1 text-sm">
+      <ul className="max-h-[360px] space-y-1.5 overflow-y-auto pr-1 text-sm">
         {apps.map((a, i) => (
           <li
             key={a.application}
