@@ -3,7 +3,7 @@ UMT2 — Cooper Standard Theming & Filter Refactor
 Tracker (chronological)
 ================================================================
 
-Last updated: 2026-05-14 (sections 17–20 added)
+Last updated: 2026-05-15 (section 21 added)
 
 ----------------------------------------------------------------
 1. INITIAL BRAND THEMING PASS
@@ -544,6 +544,76 @@ Request: Make the pie chart bigger.
       sessions" number text-2xl -> text-3xl.
       Legend max height 320 -> 360 to match the taller donut so
       the two halves stay vertically aligned.
+
+----------------------------------------------------------------
+21. PARTICLES.JS BRAND ATMOSPHERE — GLOBAL + SIDEBAR
+----------------------------------------------------------------
+Request: Implement particles.js as background with the blue/yellow
+logo theme. Then: have it inside the sidebar too.
+
+Dependencies:
+  - npm i @tsparticles/react @tsparticles/slim @tsparticles/engine
+    (tsparticles is the actively maintained successor to the
+    original particles.js, which has been unmaintained since 2014.)
+
+New component:
+  - src/components/layout/ParticlesBackground.tsx
+      Single component, two variants ("global" | "sidebar").
+      Loads the slim engine once via initParticlesEngine + loadSlim.
+      Brand palette in hex matching the oklch tokens in index.css:
+        light: blue #1f4ea8, gold #d9a629, links #1f4ea8
+        dark : blue #7aa6ff, gold #f6c95a, links #5b87e0
+      Honors prefers-reduced-motion (disables particle motion AND
+      opacity animation when set). Watches a MutationObserver on
+      <html>'s class attribute so the palette flips instantly when
+      next-themes toggles the `dark` class.
+      Always non-interactive: pointer-events-none on the wrapper,
+      onHover/onClick disabled, so it never steals input.
+      Wrapper carries `contain: strict` to keep paint scoped.
+
+      Variant tuning:
+        global  -> fixed inset-0 z-0
+                   50 particles, density box 1920x1080
+                   opacity 0.18-0.45, size 1-2.6, link 140px
+                   speed 0.4 — reads as ambient haze behind charts
+        sidebar -> absolute inset-0 z-0 (clipped by overflow-hidden
+                   on the aside)
+                   28 particles, density box 256x800
+                   opacity 0.35-0.7, size 1-2.2, link 90px
+                   speed 0.3 — denser/brighter so it actually reads
+                   inside the narrow 256px column
+
+Layout wiring:
+  - src/components/layout/AppShell.tsx
+      <ParticlesBackground /> mounted as the first child of the
+      providers, above the brand hairline. Outer flex shell stripped
+      of `bg-background` and switched to `relative z-10` so the
+      global particle canvas (z-0, fixed) shows through everywhere
+      the chrome itself isn't opaque. Body keeps its bg-background
+      so transparent particle pixels still resolve to the brand
+      near-white canvas.
+  - src/components/layout/Sidebar.tsx
+      aside bg dropped to `bg-sidebar/30` + `backdrop-blur-md`
+      + `overflow-hidden` (clip the absolute particle canvas to
+      the sidebar's rounded shape). Brand-hairline-v lifted to z-20
+      so it stays above local particles. All existing nav/branding
+      content wrapped in a `relative z-10 flex h-full flex-col
+      overflow-y-auto` div — the scroll container moved off the
+      aside (which has to clip particles) onto this inner wrapper.
+      <ParticlesBackground variant="sidebar" /> inserted as first
+      child of the aside.
+
+Why a dedicated sidebar field instead of bleeding through the
+global one:
+  - Global particles already sit at low opacity (0.18-0.45) on
+    purpose so they don't compete with charts. With even 30-55%
+    sidebar fill on top, the effective opacity collapsed to ~0.08
+    and the column read as flat. A scoped, denser, brighter field
+    inside the sidebar gives the user the brand atmosphere they
+    asked for without forcing the global field louder.
+
+Verification: tsc --noEmit clean, vite build clean (~15s, gzip
+767kB JS — pre-existing chunk-size warning unrelated to this work).
 
 ================================================================
 VERIFICATION

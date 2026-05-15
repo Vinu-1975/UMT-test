@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { ParticlesBackground } from "./ParticlesBackground";
 import { FilterProvider } from "@/lib/filter-context";
 import { AdminDataProvider } from "@/lib/admin-data";
 
@@ -11,6 +12,10 @@ export function AppShell() {
     <FilterProvider>
       <AdminDataProvider>
         <TooltipProvider delayDuration={250}>
+          {/* Brand atmosphere — subtle blue/gold particle field behind
+              all content. Non-interactive, respects reduced-motion. */}
+          <ParticlesBackground />
+
           {/* Brand hairline — the only place blue + gold meet, echoing
               the swoosh in the Cooper Standard mark. */}
           <div
@@ -18,7 +23,7 @@ export function AppShell() {
             className="brand-hairline fixed inset-x-0 top-0 z-50 h-[3px]"
           />
 
-          <div className="flex min-h-screen bg-background text-foreground">
+          <div className="relative z-10 flex min-h-screen text-foreground">
             <Sidebar />
             <div className="flex min-w-0 flex-1 flex-col">
               <Topbar />

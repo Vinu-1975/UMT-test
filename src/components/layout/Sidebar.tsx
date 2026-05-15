@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { BrandMark } from "./BrandMark";
+import { ParticlesBackground } from "./ParticlesBackground";
 import { Separator } from "@/components/ui/separator";
 
 type Item = {
@@ -81,21 +82,28 @@ function Item({ item }: { item: Item }) {
 export function Sidebar() {
   return (
     <aside
-      className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto bg-sidebar md:flex"
+      className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar/30 backdrop-blur-md md:flex"
       aria-label="Primary"
     >
+      {/* Sidebar-scoped brand particle field — denser than the global
+          atmosphere so it reads inside the narrow column. */}
+      <ParticlesBackground variant="sidebar" />
+
       {/* Vertical brand gradient acting as the sidebar's right border —
           echoes the horizontal hairline at the top of the viewport so
           the chrome reads as one continuous frame in CS colours. */}
       <span
         aria-hidden
-        className="brand-hairline-v pointer-events-none absolute top-0 right-0 bottom-0 w-[3px]"
+        className="brand-hairline-v pointer-events-none absolute top-0 right-0 bottom-0 z-20 w-[3px]"
       />
-      <div className="px-5 pt-6 pb-4">
-        <Logo />
-      </div>
 
-      <nav className="flex flex-col gap-1 px-3" aria-label="Main pages">
+      {/* All sidebar content lifts above the local particle layer. */}
+      <div className="relative z-10 flex h-full flex-col overflow-y-auto">
+        <div className="px-5 pt-6 pb-4">
+          <Logo />
+        </div>
+
+        <nav className="flex flex-col gap-1 px-3" aria-label="Main pages">
         <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Workspace
         </div>
@@ -150,6 +158,7 @@ export function Sidebar() {
           </div>
           <div className="brand-hairline relative mt-3 h-[2px] rounded-full opacity-80" />
         </div>
+      </div>
       </div>
     </aside>
   );
