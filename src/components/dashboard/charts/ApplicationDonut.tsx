@@ -55,8 +55,8 @@ export function ApplicationDonut() {
   }
 
   return (
-    <div className="grid items-center gap-6 md:grid-cols-[360px_1fr]">
-      <div className="relative mx-auto h-[360px] w-[360px]">
+    <div className="flex flex-col items-center justify-evenly gap-6 md:flex-row md:gap-0">
+      <div className="relative aspect-square w-full max-w-[440px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
@@ -73,8 +73,8 @@ export function ApplicationDonut() {
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius={80}
-              outerRadius={152}
+              innerRadius="50%"
+              outerRadius="92%"
               paddingAngle={2}
               stroke="var(--card)"
               strokeWidth={3}
@@ -130,23 +130,34 @@ export function ApplicationDonut() {
         </div>
       </div>
 
-      <ul className="max-h-[360px] space-y-1.5 overflow-y-auto pr-1 text-sm">
+      <ul className="w-full max-w-[260px] shrink-0 space-y-0.5 overflow-y-auto pr-1 md:w-[220px] md:max-h-[440px]">
         {apps.map((a, i) => (
           <li
             key={a.application}
-            className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-2 py-2 hover:border-border hover:bg-muted/40"
+            className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 hover:bg-muted/40"
           >
-            <div className="flex items-center gap-2.5 truncate">
+            <div className="flex min-w-0 items-center gap-2">
               <span
-                className="block size-3 shrink-0 rounded-full"
+                className="block size-2.5 shrink-0 rounded-full"
                 style={{ background: colorAt(i, apps.length) }}
               />
-              <span className="truncate font-medium">{a.application}</span>
-              <span className="truncate text-xs text-muted-foreground">· {a.cad} · {a.productLine}</span>
+              <div className="min-w-0">
+                <div
+                  className="truncate text-[13px] font-medium leading-tight"
+                  title={a.application}
+                >
+                  {a.application}
+                </div>
+                <div className="truncate text-[10px] leading-tight text-muted-foreground">
+                  {a.cad} · {a.productLine}
+                </div>
+              </div>
             </div>
-            <div className="num flex shrink-0 items-baseline gap-2 tabular-nums">
-              <span className="font-semibold">{num(a.total)}</span>
-              <span className="w-12 text-right text-xs text-muted-foreground">{pct(a.total / grand)}</span>
+            <div className="num flex shrink-0 items-baseline gap-1.5 tabular-nums">
+              <span className="text-[13px] font-semibold">{num(a.total)}</span>
+              <span className="w-9 text-right text-[10px] text-muted-foreground">
+                {pct(a.total / grand)}
+              </span>
             </div>
           </li>
         ))}

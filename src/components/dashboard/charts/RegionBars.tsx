@@ -18,7 +18,16 @@ import { num } from "@/lib/format";
 
 export const REGION_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "regionBars",
-  applicable: ["range", "application", "cad", "productLine", "hardware"],
+  applicable: [
+    "range",
+    "application",
+    "cad",
+    "productLine",
+    "region",
+    "domain",
+    "hardware",
+    "status",
+  ],
 };
 
 const REGION_LABEL: Record<string, string> = {

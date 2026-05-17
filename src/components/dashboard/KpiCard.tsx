@@ -5,11 +5,16 @@ import { num, signed } from "@/lib/format";
 
 export type KpiCardProps = {
   label: string;
-  value: number;
+  value: number | string;
   delta?: number;
   deltaSuffix?: string;
   icon: LucideIcon;
   helpText?: string;
+  /**
+   * Secondary line shown below the value when there's no delta —
+   * good for runner-ups ("2nd: Foo") or context ("47% of sessions").
+   */
+  caption?: string;
   /**
    * Visual accent applied to the icon tile. KPI grids alternate these
    * so the row reads as two-tone — echoing the blue + gold swoosh in
@@ -25,19 +30,27 @@ export function KpiCard({
   deltaSuffix,
   icon: Icon,
   helpText,
+  caption,
   accent = "blue",
 }: KpiCardProps) {
   const positive = (delta ?? 0) >= 0;
   const isGold = accent === "gold";
+  const isText = typeof value === "string";
+  const displayValue = isText ? value : num(value);
   return (
     <Card className="brand-edge-top card-hover overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="text-sm text-muted-foreground">{label}</div>
             <div
+              title={isText ? value : undefined}
               className={cn(
-                "num mt-2 text-3xl font-semibold tracking-tight md:text-[34px]",
+                "num mt-2 font-semibold tracking-tight",
+                // String values get smaller type + truncation; numbers stay big.
+                isText
+                  ? "truncate text-2xl md:text-[26px]"
+                  : "text-3xl md:text-[34px]",
                 // Brand-coloured value — the row reads as the swoosh
                 // (blue, gold, blue, gold) before any number is parsed.
                 isGold
@@ -45,12 +58,12 @@ export function KpiCard({
                   : "text-[#0E4DA1] dark:text-primary",
               )}
             >
-              {num(value)}
+              {displayValue}
             </div>
           </div>
           <div
             className={cn(
-              "grid size-10 place-items-center rounded-xl ring-1",
+              "grid size-10 shrink-0 place-items-center rounded-xl ring-1",
               isGold
                 ? "bg-[oklch(0.83_0.16_88_/_0.16)] text-[oklch(0.55_0.13_82)] ring-[oklch(0.83_0.16_88_/_0.35)]"
                 : "bg-primary/10 text-primary ring-primary/15",
@@ -81,6 +94,13 @@ export function KpiCard({
               </span>
             </span>
             <span className="text-muted-foreground">{helpText ?? "vs last month"}</span>
+          </div>
+        ) : caption ? (
+          <div
+            title={caption}
+            className="mt-4 truncate text-xs text-muted-foreground"
+          >
+            {caption}
           </div>
         ) : null}
       </CardContent>

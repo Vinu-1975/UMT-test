@@ -147,11 +147,17 @@ export function filterCadUsage(filters: FilterState): CadUsage[] {
 }
 
 export function filterRegionUsage(filters: FilterState): RegionUsage[] {
-  const scale = approximateUsageScale(filters);
-  const filtered = filters.region.length > 0
-    ? REGION_USAGE.filter((r) => filters.region.includes(r.region))
-    : REGION_USAGE;
-  return filtered.map((r) => ({ ...r, sessions: Math.round(r.sessions * scale) }));
+  // Count regions directly from the filtered raw session set so every chip
+  // (range, application, cad, productLine, region, domain, hardware, status)
+  // actually moves the numbers. The previous implementation only scaled the
+  // static REGION_USAGE totals, which made most chips look like no-ops.
+  const sessions = filterRawSessions(filters);
+  const counts = new Map<string, number>();
+  for (const s of sessions) counts.set(s.region, (counts.get(s.region) ?? 0) + 1);
+  // Preserve the canonical region ordering from REGION_USAGE and drop empties.
+  return REGION_USAGE
+    .map((r) => ({ region: r.region, sessions: counts.get(r.region) ?? 0 }))
+    .filter((r) => r.sessions > 0);
 }
 
 export function filterDomainUsage(filters: FilterState): DomainUsage[] {

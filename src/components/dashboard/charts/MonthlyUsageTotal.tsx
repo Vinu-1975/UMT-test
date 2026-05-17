@@ -1,10 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { BarChart3, LineChart as LineChartIcon } from "lucide-react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   LabelList,
   Legend,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -15,6 +18,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterMonthlyCad } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Stack-segment label that only renders when the segment is tall enough to fit
 // readable text. Keeps the bar from getting noisy at small values.
@@ -56,6 +60,8 @@ export const MONTHLY_TOTAL_FILTER: {
   ],
 };
 
+type ChartShape = "bar" | "line";
+
 export function MonthlyUsageTotal() {
   const { effective } = useChartFilters(
     MONTHLY_TOTAL_FILTER.id,
@@ -63,6 +69,7 @@ export function MonthlyUsageTotal() {
   );
 
   const data = useMemo(() => filterMonthlyCad(effective), [effective]);
+  const [shape, setShape] = useState<ChartShape>("bar");
 
   const showCatia = effective.cad.length === 0 || effective.cad.includes("CATIA");
   const showNx    = effective.cad.length === 0 || effective.cad.includes("NX");
@@ -82,154 +89,287 @@ export function MonthlyUsageTotal() {
   }
 
   return (
-    <div className="h-[320px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 24, right: 12, left: -8, bottom: 0 }}
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <ToggleGroup
+          type="single"
+          value={shape}
+          onValueChange={(v) => {
+            if (v === "bar" || v === "line") setShape(v);
+          }}
+          variant="outline"
+          size="sm"
+          aria-label="Chart type"
         >
-          <defs>
-            <linearGradient id="catiaBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.95} />
-              <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.6} />
-            </linearGradient>
-            <linearGradient id="nxBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.95} />
-              <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.6} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="var(--border)"
-            vertical={false}
-          />
-          <XAxis
-            dataKey="month"
-            stroke="var(--muted-foreground)"
-            fontSize={13}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            stroke="var(--muted-foreground)"
-            fontSize={13}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v: number) => num(v)}
-            width={56}
-          />
-          <Tooltip
-            contentStyle={{
-              borderRadius: 12,
-              border: "1px solid var(--border)",
-              background: "var(--card)",
-              fontSize: 13,
-              padding: "10px 12px",
-              boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
-            }}
-            cursor={{ fill: "var(--muted)" }}
-            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
-            labelFormatter={(label) => `Month: ${label}`}
-          />
-          <Legend
-            verticalAlign="top"
-            iconType="circle"
-            wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
-          />
-          {average > 0 ? (
-            <ReferenceLine
-              y={average}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="4 4"
-              strokeOpacity={0.6}
-              label={{
-                value: `Avg ${num(Math.round(average))}`,
-                position: "insideTopRight",
-                fill: "var(--muted-foreground)",
-                fontSize: 11,
-              }}
-            />
-          ) : null}
-          {showCatia && (
-            <Bar
-              dataKey="CATIA"
-              name="CATIA"
-              stackId="usage"
-              fill="url(#catiaBarGrad)"
-              maxBarSize={48}
-              shape={(props: any) => {
-                const { x, y, width, height, payload } = props;
-                const shouldRoundTop = !showNx || payload.NX === 0;
-                const radius = shouldRoundTop ? 8 : 0;
-                return (
-                  <path
-                    d={`
-            M${x},${y + radius}
-            Q${x},${y} ${x + radius},${y}
-            H${x + width - radius}
-            Q${x + width},${y} ${x + width},${y + radius}
-            V${y + height}
-            H${x}
-            Z
-          `}
-                    fill="url(#catiaBarGrad)"
+          <ToggleGroupItem value="bar" aria-label="Bar chart">
+            <BarChart3 className="size-3.5" />
+            Bar
+          </ToggleGroupItem>
+          <ToggleGroupItem value="line" aria-label="Line chart">
+            <LineChartIcon className="size-3.5" />
+            Line
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          {shape === "bar" ? (
+            <BarChart
+              data={data}
+              margin={{ top: 24, right: 12, left: -8, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id="catiaBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.6} />
+                </linearGradient>
+                <linearGradient id="nxBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => num(v)}
+                width={56}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--card)",
+                  fontSize: 13,
+                  padding: "10px 12px",
+                  boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
+                }}
+                cursor={{ fill: "var(--muted)" }}
+                formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+                labelFormatter={(label) => `Month: ${label}`}
+              />
+              <Legend
+                verticalAlign="top"
+                iconType="circle"
+                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
+              />
+              {average > 0 ? (
+                <ReferenceLine
+                  y={average}
+                  stroke="var(--muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.6}
+                  label={{
+                    value: `Avg ${num(Math.round(average))}`,
+                    position: "insideTopRight",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 11,
+                  }}
+                />
+              ) : null}
+              {showCatia && (
+                <Bar
+                  dataKey="CATIA"
+                  name="CATIA"
+                  stackId="usage"
+                  fill="url(#catiaBarGrad)"
+                  maxBarSize={48}
+                  shape={(props: any) => {
+                    const { x, y, width, height, payload } = props;
+                    const shouldRoundTop = !showNx || payload.NX === 0;
+                    const radius = shouldRoundTop ? 8 : 0;
+                    return (
+                      <path
+                        d={`
+                M${x},${y + radius}
+                Q${x},${y} ${x + radius},${y}
+                H${x + width - radius}
+                Q${x + width},${y} ${x + width},${y + radius}
+                V${y + height}
+                H${x}
+                Z
+              `}
+                        fill="url(#catiaBarGrad)"
+                      />
+                    );
+                  }}
+                >
+                  <LabelList
+                    dataKey="CATIA"
+                    content={renderStackLabel("#ffffff")}
                   />
-                );
-              }}
+                </Bar>
+              )}
+              {showNx && (
+                <Bar
+                  dataKey="NX"
+                  name="NX"
+                  stackId="usage"
+                  fill="url(#nxBarGrad)"
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={48}
+                >
+                  <LabelList
+                    dataKey="NX"
+                    content={renderStackLabel("var(--foreground)")}
+                  />
+                  <LabelList
+                    dataKey="total"
+                    position="top"
+                    formatter={(v) => num(Number(v))}
+                    style={{
+                      fill: "var(--foreground)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  />
+                </Bar>
+              )}
+              {showCatia && !showNx && (
+                <Bar
+                  dataKey="_hidden"
+                  name=""
+                  stackId="usage"
+                  fill="transparent"
+                  maxBarSize={48}
+                >
+                  <LabelList
+                    dataKey="total"
+                    position="top"
+                    formatter={(v) => num(Number(v))}
+                    style={{
+                      fill: "var(--foreground)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  />
+                </Bar>
+              )}
+            </BarChart>
+          ) : (
+            <LineChart
+              data={data}
+              margin={{ top: 24, right: 12, left: -8, bottom: 0 }}
             >
-              <LabelList
-                dataKey="CATIA"
-                content={renderStackLabel("#ffffff")}
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                vertical={false}
               />
-            </Bar>
-          )}
-          {showNx && (
-            <Bar
-              dataKey="NX"
-              name="NX"
-              stackId="usage"
-              fill="url(#nxBarGrad)"
-              radius={[8, 8, 0, 0]}
-              maxBarSize={48}
-            >
-              <LabelList
-                dataKey="NX"
-                content={renderStackLabel("var(--foreground)")}
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
               />
-              <LabelList
-                dataKey="total"
-                position="top"
-                formatter={(v) => num(Number(v))}
-                style={{
-                  fill: "var(--foreground)",
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => num(v)}
+                width={56}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--card)",
                   fontSize: 13,
-                  fontWeight: 700,
+                  padding: "10px 12px",
+                  boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
+                cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
+                formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+                labelFormatter={(label) => `Month: ${label}`}
               />
-            </Bar>
-          )}
-          {showCatia && !showNx && (
-            <Bar
-              dataKey="_hidden"
-              name=""
-              stackId="usage"
-              fill="transparent"
-              maxBarSize={48}
-            >
-              <LabelList
-                dataKey="total"
-                position="top"
-                formatter={(v) => num(Number(v))}
-                style={{
-                  fill: "var(--foreground)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
+              <Legend
+                verticalAlign="top"
+                iconType="circle"
+                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
               />
-            </Bar>
+              {average > 0 ? (
+                <ReferenceLine
+                  y={average}
+                  stroke="var(--muted-foreground)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.6}
+                  label={{
+                    value: `Avg ${num(Math.round(average))}`,
+                    position: "insideTopRight",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 11,
+                  }}
+                />
+              ) : null}
+              {showCatia && (
+                <Line
+                  type="monotone"
+                  dataKey="CATIA"
+                  name="CATIA"
+                  stroke="var(--chart-1)"
+                  strokeWidth={2.6}
+                  dot={{ r: 3, fill: "var(--chart-1)", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList
+                    dataKey="CATIA"
+                    position="top"
+                    offset={8}
+                    formatter={(v) => num(Number(v))}
+                    style={{ fill: "var(--chart-1)", fontSize: 11, fontWeight: 600 }}
+                  />
+                </Line>
+              )}
+              {showNx && (
+                <Line
+                  type="monotone"
+                  dataKey="NX"
+                  name="NX"
+                  stroke="var(--chart-2)"
+                  strokeWidth={2.2}
+                  dot={{ r: 3, fill: "var(--chart-2)", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList
+                    dataKey="NX"
+                    position="bottom"
+                    offset={8}
+                    formatter={(v) => num(Number(v))}
+                    style={{ fill: "var(--chart-2)", fontSize: 11, fontWeight: 600 }}
+                  />
+                </Line>
+              )}
+              {showCatia && showNx && (
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  name="Total"
+                  stroke="var(--foreground)"
+                  strokeWidth={1.6}
+                  strokeDasharray="4 4"
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              )}
+            </LineChart>
           )}
-        </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
