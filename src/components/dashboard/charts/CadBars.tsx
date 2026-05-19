@@ -1,16 +1,5 @@
 import { useMemo } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  LabelList,
-} from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useChartFilters } from "@/lib/filter-context";
 import { filterCadUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
@@ -27,87 +16,137 @@ const PALETTE = [
   "var(--chart-3)",
   "var(--chart-4)",
   "var(--chart-5)",
+  "var(--chart-6)",
 ];
+
+// Stay on-brand for any slices past the palette by alternating between
+// Cooper Standard blue (~250°) and gold (~80°) hues with stepped lightness.
+function colorAt(i: number, total: number): string {
+  if (i < PALETTE.length) return PALETTE[i]!;
+  const k = i - PALETTE.length;
+  const extras = Math.max(total - PALETTE.length, 1);
+  const hue = k % 2 === 0 ? 250 : 80;
+  const steps = Math.max(Math.ceil(extras / 2), 1);
+  const t = steps === 1 ? 0 : Math.floor(k / 2) / (steps - 1);
+  const L = 0.5 + t * 0.32;
+  const C = k % 2 === 0 ? 0.15 : 0.16;
+  return `oklch(${L.toFixed(2)} ${C} ${hue})`;
+}
 
 export function CadBars() {
   const { effective } = useChartFilters(CAD_BARS_FILTER.id, CAD_BARS_FILTER.applicable);
-  const data = useMemo(() => filterCadUsage(effective), [effective]);
+  const cads = useMemo(
+    () => [...filterCadUsage(effective)].sort((a, b) => b.sessions - a.sessions),
+    [effective],
+  );
 
-  const average = useMemo(() => {
-    if (data.length === 0) return 0;
-    return data.reduce((s, d) => s + d.sessions, 0) / data.length;
-  }, [data]);
+  const grand = cads.reduce((s, c) => s + c.sessions, 0) || 0;
+  const data = cads.map((c) => ({ name: c.cad, value: c.sessions }));
 
-  if (data.length === 0) {
+  if (cads.length === 0) {
     return (
-      <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">
+      <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">
         No CAD usage matches the current filter.
       </div>
     );
   }
 
   return (
-    <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 24, right: 16, left: -8, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis
-            dataKey="cad"
-            stroke="var(--muted-foreground)"
-            fontSize={13}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            stroke="var(--muted-foreground)"
-            fontSize={13}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v: number) => num(v)}
-            width={64}
-          />
-          <Tooltip
-            contentStyle={{
-              borderRadius: 12,
-              border: "1px solid var(--border)",
-              background: "var(--card)",
-              fontSize: 13,
-              padding: "10px 12px",
-            }}
-            cursor={{ fill: "var(--muted)" }}
-            formatter={(v, _n, item) => {
-              const sessions = Number(v);
-              const share = (item?.payload as { share?: number } | undefined)?.share;
-              return [`${num(sessions)} sessions${share != null ? ` · ${pct(share)}` : ""}`, "Usage"];
-            }}
-          />
-          {average > 0 && data.length > 1 ? (
-            <ReferenceLine
-              y={average}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="4 4"
-              strokeOpacity={0.6}
-              label={{
-                value: `Avg ${num(Math.round(average))}`,
-                position: "insideTopRight",
-                fill: "var(--muted-foreground)",
-                fontSize: 11,
+    <div className="grid items-center gap-4 md:grid-cols-[240px_1fr]">
+      <div className="relative mx-auto h-[240px] w-[240px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Tooltip
+              formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+              contentStyle={{
+                borderRadius: 12,
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+                fontSize: 13,
+                padding: "10px 12px",
               }}
             />
-          ) : null}
-          <Bar dataKey="sessions" name="Sessions" radius={[8, 8, 0, 0]}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-            ))}
-            <LabelList
-              dataKey="sessions"
-              position="top"
-              formatter={(v) => num(Number(v))}
-              style={{ fill: "var(--foreground)", fontSize: 13, fontWeight: 600 }}
-            />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={56}
+              outerRadius={100}
+              paddingAngle={2}
+              stroke="var(--card)"
+              strokeWidth={3}
+              labelLine={false}
+              label={(props: any) => {
+                const RADIAN = Math.PI / 180;
+                const { cx, cy, midAngle, innerRadius, outerRadius, value, percent } = props;
+                if (percent < 0.05) return null;
+                const r = (innerRadius + outerRadius) / 2;
+                const x = cx + r * Math.cos(-midAngle * RADIAN);
+                const y = cy + r * Math.sin(-midAngle * RADIAN);
+                return (
+                  <g>
+                    <text
+                      x={x}
+                      y={y - 7}
+                      fill="#ffffff"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize={12}
+                      fontWeight={700}
+                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                    >
+                      {num(value)}
+                    </text>
+                    <text
+                      x={x}
+                      y={y + 7}
+                      fill="#ffffff"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize={11}
+                      fontWeight={600}
+                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                    >
+                      {`${Math.round(percent * 100)}%`}
+                    </text>
+                  </g>
+                );
+              }}
+              isAnimationActive={false}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={colorAt(i, data.length)} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Sessions</div>
+          <div className="num mt-0.5 text-2xl font-semibold">{num(grand)}</div>
+        </div>
+      </div>
+
+      <ul className="space-y-2 text-base">
+        {cads.map((c, i) => (
+          <li key={c.cad} className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span
+                className="block size-3 shrink-0 rounded-full"
+                style={{ background: colorAt(i, cads.length) }}
+              />
+              <span className="truncate font-medium" title={c.cad}>
+                {c.cad}
+              </span>
+            </div>
+            <div className="num flex shrink-0 items-baseline gap-3 tabular-nums">
+              <span className="font-semibold">{num(c.sessions)}</span>
+              <span className="w-12 text-right text-sm text-muted-foreground">
+                {pct(grand > 0 ? c.sessions / grand : 0)}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

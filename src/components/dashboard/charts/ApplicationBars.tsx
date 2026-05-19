@@ -14,30 +14,11 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterApplicationUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
+import { segmentLabelVertical } from "./segment-label";
 
-// Render a segment value inside the stack, but only when there's room for it.
-// Older readers can scan each bar without hovering.
-const renderStackLabel = (fill: string) => (props: any) => {
-  const { x, y, width, height, value } = props;
-  const w = Number(width);
-  const h = Number(height);
-  const v = Number(value);
-  if (!isFinite(v) || v <= 0) return null;
-  if (h < 18 || w < 28) return null;
-  return (
-    <text
-      x={Number(x) + w / 2}
-      y={Number(y) + h / 2}
-      textAnchor="middle"
-      dominantBaseline="central"
-      fill={fill}
-      fontSize={11}
-      fontWeight={700}
-    >
-      {num(v)}
-    </text>
-  );
-};
+// Per-segment labels use the shared `segmentLabelVertical` so tiny
+// segments pop out to the right of the bar with a leader instead of
+// being silently hidden. See segment-label.tsx for details.
 
 export const APP_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "appBars",
@@ -95,16 +76,34 @@ export function ApplicationBars() {
           />
           <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 12, fontSize: 13 }} />
           <Bar dataKey="validation" stackId="a" name="Validation" fill="var(--chart-1)">
-            <LabelList dataKey="validation" content={renderStackLabel("#ffffff")} />
+            <LabelList
+              dataKey="validation"
+              content={segmentLabelVertical({ color: "var(--chart-1)" })}
+            />
           </Bar>
           <Bar dataKey="execution" stackId="a" name="Execution" fill="var(--chart-2)">
-            <LabelList dataKey="execution" content={renderStackLabel("var(--foreground)")} />
+            <LabelList
+              dataKey="execution"
+              content={segmentLabelVertical({
+                color: "var(--chart-2)",
+                insideFill: "var(--foreground)",
+              })}
+            />
           </Bar>
           <Bar dataKey="blockCreation" stackId="a" name="Block creation" fill="var(--chart-3)">
-            <LabelList dataKey="blockCreation" content={renderStackLabel("#ffffff")} />
+            <LabelList
+              dataKey="blockCreation"
+              content={segmentLabelVertical({ color: "var(--chart-3)" })}
+            />
           </Bar>
           <Bar dataKey="viewOps" stackId="a" name="Viewing" fill="var(--chart-4)" radius={[6, 6, 0, 0]}>
-            <LabelList dataKey="viewOps" content={renderStackLabel("var(--foreground)")} />
+            <LabelList
+              dataKey="viewOps"
+              content={segmentLabelVertical({
+                color: "var(--chart-4)",
+                insideFill: "var(--foreground)",
+              })}
+            />
             <LabelList
               dataKey="total"
               position="top"

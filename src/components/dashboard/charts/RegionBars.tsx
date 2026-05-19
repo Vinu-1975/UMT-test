@@ -3,7 +3,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
+  Legend,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -12,9 +12,10 @@ import {
   LabelList,
 } from "recharts";
 import { useChartFilters } from "@/lib/filter-context";
-import { filterRegionUsage } from "@/lib/filtering";
+import { filterRawSessions } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
+import { segmentLabelHorizontal } from "./segment-label";
 
 export const REGION_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "regionBars",
@@ -37,35 +38,53 @@ const REGION_LABEL: Record<string, string> = {
   SA: "South America",
 };
 
-const PALETTE = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-6)",
-];
+const CATIA_COLOR = "var(--chart-1)";
+const NX_COLOR = "var(--chart-2)";
+const OTHER_COLOR = "var(--chart-4)";
+
+// Per-segment labels use the shared `segmentLabelHorizontal` so tiny
+// values pop out above the bar with a leader — see segment-label.tsx
+// for the rendering details.
+
+type Row = {
+  region: string;
+  regionLabel: string;
+  CATIA: number;
+  NX: number;
+  Other: number;
+  total: number;
+};
 
 export function RegionBars() {
   const { effective } = useChartFilters(REGION_BARS_FILTER.id, REGION_BARS_FILTER.applicable);
-  const raw = useMemo(() => filterRegionUsage(effective), [effective]);
 
-  // Use full region names on the chart so older readers don't have to decode
-  // two-letter codes; keep the original key as `code` for tooltips.
-  const data = useMemo(
-    () =>
-      [...raw]
-        .sort((a, b) => b.sessions - a.sessions)
-        .map((r) => ({
-          ...r,
-          code: r.region,
-          regionLabel: REGION_LABEL[r.region] ?? r.region,
-        })),
-    [raw],
-  );
+  const data = useMemo<Row[]>(() => {
+    const sessions = filterRawSessions(effective);
+    const byRegion = new Map<string, { CATIA: number; NX: number; Other: number }>();
+    for (const s of sessions) {
+      const cad = String(s.cad ?? "").toUpperCase();
+      const bucket = byRegion.get(s.region) ?? { CATIA: 0, NX: 0, Other: 0 };
+      if (cad === "CATIA") bucket.CATIA++;
+      else if (cad === "NX") bucket.NX++;
+      else bucket.Other++;
+      byRegion.set(s.region, bucket);
+    }
+    return [...byRegion.entries()]
+      .map(([region, b]) => ({
+        region,
+        regionLabel: REGION_LABEL[region] ?? region,
+        ...b,
+        total: b.CATIA + b.NX + b.Other,
+      }))
+      .filter((r) => r.total > 0)
+      .sort((a, b) => b.total - a.total);
+  }, [effective]);
+
+  const hasOther = useMemo(() => data.some((d) => d.Other > 0), [data]);
 
   const average = useMemo(() => {
     if (data.length === 0) return 0;
-    return data.reduce((s, d) => s + d.sessions, 0) / data.length;
+    return data.reduce((s, d) => s + d.total, 0) / data.length;
   }, [data]);
 
   if (data.length === 0) {
@@ -79,7 +98,7 @@ export function RegionBars() {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 64, left: 0, bottom: 0 }}>
+        <BarChart data={data} layout="vertical" margin={{ top: 24, right: 72, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
           <XAxis
             type="number"
@@ -108,7 +127,13 @@ export function RegionBars() {
               padding: "10px 12px",
             }}
             cursor={{ fill: "var(--muted)" }}
-            formatter={(v) => [`${num(Number(v))} sessions`, "Usage"]}
+            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+          />
+          <Legend
+            verticalAlign="top"
+            align="right"
+            iconType="circle"
+            wrapperStyle={{ fontSize: 12, paddingBottom: 6 }}
           />
           {average > 0 && data.length > 1 ? (
             <ReferenceLine
@@ -124,17 +149,32 @@ export function RegionBars() {
               }}
             />
           ) : null}
-          <Bar dataKey="sessions" name="Sessions" radius={[0, 8, 8, 0]}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-            ))}
-            <LabelList
-              dataKey="sessions"
-              position="right"
-              formatter={(v) => num(Number(v))}
-              style={{ fill: "var(--foreground)", fontSize: 13, fontWeight: 600 }}
-            />
+          <Bar dataKey="CATIA" name="CATIA" stackId="cad" fill={CATIA_COLOR} radius={[0, 0, 0, 0]}>
+            <LabelList dataKey="CATIA" content={segmentLabelHorizontal(CATIA_COLOR)} />
           </Bar>
+          <Bar dataKey="NX" name="NX" stackId="cad" fill={NX_COLOR} radius={hasOther ? [0, 0, 0, 0] : [0, 8, 8, 0]}>
+            <LabelList dataKey="NX" content={segmentLabelHorizontal(NX_COLOR)} />
+          </Bar>
+          {hasOther ? (
+            <Bar dataKey="Other" name="Other" stackId="cad" fill={OTHER_COLOR} radius={[0, 8, 8, 0]}>
+              <LabelList dataKey="Other" content={segmentLabelHorizontal(OTHER_COLOR)} />
+              <LabelList
+                dataKey="total"
+                position="right"
+                formatter={(v) => num(Number(v))}
+                style={{ fill: "var(--foreground)", fontSize: 13, fontWeight: 600 }}
+              />
+            </Bar>
+          ) : (
+            <Bar dataKey="total" name="" stackId="totalLabel" fill="transparent" isAnimationActive={false}>
+              <LabelList
+                dataKey="total"
+                position="right"
+                formatter={(v) => num(Number(v))}
+                style={{ fill: "var(--foreground)", fontSize: 13, fontWeight: 600 }}
+              />
+            </Bar>
+          )}
         </BarChart>
       </ResponsiveContainer>
     </div>

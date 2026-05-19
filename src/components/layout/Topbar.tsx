@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "@/components/theme-provider";
 import { BrandMark } from "./BrandMark";
+import { PaletteSwitcher } from "./PaletteSwitcher";
 
 export function Topbar() {
   const { theme, setTheme } = useTheme();
@@ -46,6 +47,7 @@ export function Topbar() {
           </span>
         </div>
 
+        <PaletteSwitcher />
         <Button
           variant="ghost"
           size="icon"

@@ -5,7 +5,6 @@ import {
   ListChecks,
   Network,
   Users,
-  HelpCircle,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { BrandMark } from "./BrandMark";
@@ -124,16 +123,6 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto p-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <HelpCircle className="size-4 text-primary" />
-            Need help?
-          </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            New to UMT? Read the getting-started guide or ask your administrator.
-          </p>
-        </div>
-
         {/* Brand sign-off — large, faded CS mark watermark with version line.
             Anchors the sidebar in the same brand language as the header chip
             and the top-of-viewport hairline. */}

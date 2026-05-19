@@ -19,30 +19,11 @@ import { filterMonthlyCad } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { segmentLabelVertical } from "./segment-label";
 
-// Stack-segment label that only renders when the segment is tall enough to fit
-// readable text. Keeps the bar from getting noisy at small values.
-const renderStackLabel = (fill: string) => (props: any) => {
-  const { x, y, width, height, value } = props;
-  const w = Number(width);
-  const h = Number(height);
-  const v = Number(value);
-  if (!isFinite(v) || v <= 0) return null;
-  if (h < 18 || w < 28) return null;
-  return (
-    <text
-      x={Number(x) + w / 2}
-      y={Number(y) + h / 2}
-      textAnchor="middle"
-      dominantBaseline="central"
-      fill={fill}
-      fontSize={11}
-      fontWeight={700}
-    >
-      {num(v)}
-    </text>
-  );
-};
+// Per-segment labels use the shared `segmentLabelVertical` so tiny
+// values pop out to the right of the bar with a leader instead of
+// being clipped inside the stack. See segment-label.tsx for details.
 
 export const MONTHLY_TOTAL_FILTER: {
   id: string;
@@ -209,7 +190,7 @@ export function MonthlyUsageTotal() {
                 >
                   <LabelList
                     dataKey="CATIA"
-                    content={renderStackLabel("#ffffff")}
+                    content={segmentLabelVertical({ color: "var(--chart-1)" })}
                   />
                 </Bar>
               )}
@@ -224,7 +205,10 @@ export function MonthlyUsageTotal() {
                 >
                   <LabelList
                     dataKey="NX"
-                    content={renderStackLabel("var(--foreground)")}
+                    content={segmentLabelVertical({
+                      color: "var(--chart-2)",
+                      insideFill: "var(--foreground)",
+                    })}
                   />
                   <LabelList
                     dataKey="total"

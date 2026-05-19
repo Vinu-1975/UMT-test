@@ -3,7 +3,7 @@ UMT2 — Cooper Standard Theming & Filter Refactor
 Tracker (chronological)
 ================================================================
 
-Last updated: 2026-05-15 (section 21 added)
+Last updated: 2026-05-19 (sections 22-28 added)
 
 ----------------------------------------------------------------
 1. INITIAL BRAND THEMING PASS
@@ -614,6 +614,300 @@ global one:
 
 Verification: tsc --noEmit clean, vite build clean (~15s, gzip
 767kB JS — pre-existing chunk-size warning unrelated to this work).
+
+----------------------------------------------------------------
+22. HOME KPI CARDS — DATA-DRIVEN HEADLINE METRICS
+----------------------------------------------------------------
+Request: Replace the original 1st/2nd/4th KPI cards on Home with
+data-driven headline metrics derived from filtered sessions.
+
+  - src/pages/Home.tsx
+      Removed the static "sessions / users / dominant CAD" trio.
+      New KPI grid (lg:grid-cols-5) computed from
+      filterRawSessions(global) in a single useMemo:
+        i)   Busiest month this year   — peak month of the
+             current calendar year + its session count
+        ii)  Most used application     — top app by sessions
+             (caption shows the runner-up when available)
+        iii) Applications in use       — distinct app count +
+             HEADLINE.applicationsDelta
+        iv)  Top product line          — pretty-cased
+             (e.g. FLUIDS -> Fluids; FBD/FTS stay uppercase)
+             with "% of sessions" caption
+        v)   Top region                — REGION_LABELS lookup
+             (NA/EU/ASIA/SA -> full names) with "% of sessions"
+      Accent colours alternate blue/gold across the row.
+      Icons: CalendarDays, Sparkles, AppWindow, Layers, Globe2.
+
+----------------------------------------------------------------
+23. REPORTS — HEATMAPS, APP COMPARE, BAR/LINE TOGGLE
+----------------------------------------------------------------
+Request: Add per-month-of-year heatmaps, a two-application
+trend comparison, and a bar/line toggle on the overall monthly
+usage chart.
+
+New charts (each owns its own filter chip row, filterStyle="chips"):
+  - src/components/dashboard/charts/YearHeatmap.tsx
+      Single-row 12-month heatmap. Per-month totals computed
+      from filterRawSessions(effective); year picked from the
+      latest session. Tile background uses oklch blue at the
+      computed intensity. Busiest tile gets a ring-2 in brand
+      gold. Label colour flips to white at intensity > 0.55.
+      Summary line: "{total} sessions across {year} · busiest
+      {month} ({count}) · quietest {month} ({count})".
+  - src/components/dashboard/charts/MonthlyHeatmap.tsx
+      Day x Month heatmap (31 x 12 grid). Non-existent days
+      (Feb 30/31 etc.) rendered as hatched cells via
+      repeating-linear-gradient so "n/a" is visually distinct
+      from "zero sessions". Day labels every 5th row, Σ totals
+      footer row, min-width 640 horizontal scroll wrapper.
+      Less -> More legend at the bottom.
+  - src/components/dashboard/charts/AppCompare.tsx
+      Two-line monthly comparison. Local state holds appA/appB
+      with defaults = top two apps by session count in the
+      filtered window. PickerField components use Select with
+      busiest-first ordering and per-option session-count
+      badges. Picking an app that's already on the other side
+      swaps them. APP_COMPARE_FILTER.applicable intentionally
+      excludes "application" — the in-chart pickers own it.
+  - src/components/dashboard/charts/MonthlyUsageTotal.tsx
+      Added a bar/line ToggleGroup at top-right. Bar branch
+      unchanged (stacked CATIA + NX with totals above). Line
+      branch renders one Line per visible CAD plus a dashed
+      "Total" trendline when both are shown. Same Tooltip,
+      ReferenceLine, and Legend as the bar mode so toggling
+      preserves the reading experience.
+
+Wiring:
+  - src/pages/Reports.tsx
+      New ChartCards added in this order: overall monthly
+      usage (with bar/line toggle), YearHeatmap, MonthlyHeatmap,
+      AppCompare. All carry their own per-chart chip rows.
+
+----------------------------------------------------------------
+24. REGION CHART — FILTER FIX + MONTHLY TREND CHART
+----------------------------------------------------------------
+Bug: "Where in the world is UMT used?" appeared to ignore most
+chips. range was a complete no-op; other chips just scaled all
+bars uniformly.
+
+Root cause: filterRegionUsage() was scaling the static
+REGION_USAGE totals via approximateUsageScale() instead of
+counting from the filtered raw session set.
+
+  - src/lib/filtering.ts
+      filterRegionUsage() rewritten to count from
+      filterRawSessions(filters), then preserve canonical
+      REGION_USAGE ordering and drop empty regions. Comment
+      records why (previous impl made range a no-op).
+  - src/components/dashboard/charts/RegionBars.tsx
+      REGION_BARS_FILTER.applicable widened from
+        [range, application, cad, productLine, hardware]
+      to
+        [range, application, cad, productLine, region, domain,
+         hardware, status]
+      so the chip row actually surfaces region/domain/status.
+
+New chart:
+  - src/components/dashboard/charts/RegionMonthly.tsx
+      Month-by-region trend with a three-mode ToggleGroup:
+        stacked (default) — totals labelled above the stack
+        grouped           — side-by-side bars per region
+        line              — one Line per present region
+      Computes per-month per-region buckets via
+      filterRawSessions; only renders regions actually present
+      in the filtered set. Region colors use chart-1..4
+      (NA/EU/ASIA/SA) so legends stay stable across palettes.
+      Card added in Reports.tsx (and later moved to Home after
+      the merge in section 26).
+
+----------------------------------------------------------------
+25. APPLICATION DONUT — COMPACT LAYOUT, EQUAL SPACING
+----------------------------------------------------------------
+Request: The "Which applications are used most?" card had too
+much empty space around the legend; make the pie bigger and
+balance the chart/legend whitespace.
+
+  - src/components/dashboard/charts/ApplicationDonut.tsx
+      Outer wrapper rewritten twice:
+        First iteration: grid -> grid [minmax(0,1fr)_220px]
+          to remove the legend's wasted space.
+        Second iteration: grid -> flex flex-col items-center
+          justify-evenly gap-6 md:flex-row md:gap-0 — Flexbox
+          distributes leftover horizontal space into three
+          equal gutters (left-edge → chart, chart → legend,
+          legend → right-edge).
+      Chart container: aspect-square w-full max-w-[440px]
+        shrink-0 (reduced from 520 so equal margins fit).
+      Legend: w-full max-w-[260px] shrink-0 space-y-0.5
+        overflow-y-auto pr-1 md:w-[220px] md:max-h-[440px].
+      Pie radii switched to percentage strings ("50%"/"92%")
+      so the donut scales with the responsive square container
+      instead of being locked to absolute pixels.
+      Legend rows compacted to two-line stacked layout
+      (name 13px, meta 10px, dot size-2.5, tight padding).
+
+----------------------------------------------------------------
+26. HOME ABSORBS REPORTS; PIE-CHART CAD; STACKED REGION BARS
+----------------------------------------------------------------
+Request: Combine Home and Reports — keep only the KPI cards
+from Home and pull everything else from Reports. Convert the
+CAD bar chart into a pie. Put it next to Fluids/Sealings at the
+top. Drop the two "what are people doing" and "how do top apps
+differ" charts. In the region bars, break each bar into
+CATIA/NX so the audience can see how much of each.
+
+Consolidation:
+  - src/pages/Home.tsx
+      Removed the global FilterChips bar, the original
+      MonthlyUsage area chart, the standalone FluidsSealings
+      and RegionBars cards, and QuickLinks. Imports every
+      chart from Reports.tsx in the same order, all using
+      filterStyle="chips" so each card carries its own chips.
+      Reports.tsx left in place for now — its route, sidebar
+      link, and page render are unchanged (Reports now mirrors
+      Home; fully removing it is the next consolidation step).
+
+CAD chart converted to pie:
+  - src/components/dashboard/charts/CadBars.tsx
+      Whole file rewritten as a donut + legend layout that
+      mirrors SplitDonut / ApplicationDonut. Public exports
+      (`CadBars`, `CAD_BARS_FILTER`) and applicable filters
+      unchanged so consumers pick it up automatically.
+      In-slice labels show value + percent (white text with
+      paint-order stroke). Center hole shows total. Legend
+      lists every CAD platform with session count and share.
+
+Side-by-side at top of Home:
+  - src/pages/Home.tsx
+      New row added right after the KPI grid:
+        grid gap-4 lg:grid-cols-2
+          - "Which CAD platform is used the most?" (CadBars)
+          - "Fluids vs Sealings" (FluidsSealingsSplit)
+      Both cards stack to one column below lg so neither pie
+      gets squished on tablets.
+      CadBars layout switched from a 440px hero pie to a
+      compact 240x240 donut + 1fr legend (grid
+      [240px_1fr]) so it matches the SplitDonut sizing.
+
+Charts dropped from Home:
+  - "What are people doing inside each app?" (ApplicationBars)
+  - "How do top apps differ across CAD tools?" (CadVsAppMatrix)
+  Imports cleaned up too. Components and Reports references
+  preserved for now.
+
+Region bars now break out CAD platform:
+  - src/components/dashboard/charts/RegionBars.tsx
+      Rewritten as a stacked horizontal bar chart computed
+      directly from filterRawSessions(effective). Each region
+      row stacks CATIA (chart-1) + NX (chart-2). An Other
+      segment (chart-4) only renders when the filtered set
+      actually contains non-CATIA/NX CAD tools, so totals
+      remain honest. Per-segment counts render inside the
+      coloured blocks; row total to the right. Avg reference
+      line preserved.
+
+----------------------------------------------------------------
+27. CHART PALETTE SWITCHER (TOP BAR)
+----------------------------------------------------------------
+Request: Offer different colour palette options for the charts
+with a UI control to compare them, ideally in the top bar.
+
+  - src/components/palette-provider.tsx (new)
+      PaletteProvider sets --chart-1..6 on <html> so every
+      chart re-themes with no per-component changes. Each
+      palette ships both `light` and `dark` six-colour
+      variants; a MutationObserver on <html>'s class swaps
+      to the right variant when next-themes flips dark mode.
+      Selection persists to localStorage under "umt-palette".
+      Palettes shipped:
+        brand   — Cooper Standard (default; blue -> gold)
+        brand2  — Cooper Standard 2 (blue + gold lead so any
+                  2-segment bar reads as the canonical
+                  blue + yellow pair; remaining slots fall
+                  back into the brand family)
+        ocean   — cool blues + teals
+        sunset  — warm reds -> ambers
+        forest  — greens + earth tones
+        mono    — single-hue blue ramp
+        vivid   — high-contrast multi-hue
+  - src/components/layout/PaletteSwitcher.tsx (new)
+      Palette icon button in the topbar opens a Popover with
+      one row per palette: name, description, six-swatch
+      strip preview, and a check mark on the active row.
+      Click any row to apply instantly.
+  - src/main.tsx
+      Wrapped App in <PaletteProvider> inside <ThemeProvider>.
+  - src/components/layout/Topbar.tsx
+      <PaletteSwitcher /> inserted before the notifications +
+      theme-toggle buttons.
+
+Side cleanup:
+  - src/components/layout/Sidebar.tsx
+      Pre-existing unused HelpCircle import removed (was
+      blocking the build after the new components were added).
+
+----------------------------------------------------------------
+28. SMART SEGMENT LABELS — CALLOUTS FOR TINY VALUES
+----------------------------------------------------------------
+Bug (screenshot): In the region stack, Asia's NX segment was 16
+sessions next to 3,340 CATIA. The "16" label was rendered inside
+the segment and clipped because the slice was too narrow to fit
+the text. Same problem on the monthly region chart (May's tiny
+slice).
+
+Approach: When a segment is big enough for its value, render the
+label inside as usual; otherwise pop it out of the segment as a
+callout in the segment's own colour with a short leader line
+pointing back to it. Two leader geometries — one for vertical
+bar stacks (callout to the right), one for horizontal bar stacks
+(callout above with an L-shaped tick).
+
+New shared module:
+  - src/components/dashboard/charts/segment-label.tsx
+      Exports two helpers:
+        segmentLabelVertical({color, insideFill?})   — vertical
+          stacks. Inside fits when segment height >= 14 px.
+          Callout: horizontal leader to the right of the bar.
+        segmentLabelHorizontal({color, insideFill?}) — horizontal
+          stacks. Inside fits when segment width >= text width
+          (~6.6 px/char + 10 px padding at 12 px font).
+          Callout: L-shaped leader above the bar.
+      `color` is used for the callout text + leader; `insideFill`
+      defaults to white but can be overridden (used for light
+      brand segments like chart-2 / chart-4 where white reads
+      poorly against the fill).
+
+Applied to:
+  - src/components/dashboard/charts/RegionBars.tsx
+      Inline segmentLabel() helper removed; CATIA / NX / Other
+      LabelLists now consume segmentLabelHorizontal(color).
+      Chart top margin bumped 8 -> 24 to give callouts headroom.
+  - src/components/dashboard/charts/RegionMonthly.tsx
+      Inline stackedSegmentLabel() helper removed; stacked-mode
+      LabelLists now consume segmentLabelVertical(REGION_COLOR[r]).
+      Per-region inline values also added to grouped + line
+      modes (LabelList position="top" in the region's own colour
+      with zero-value suppression).
+  - src/components/dashboard/charts/MonthlyUsageTotal.tsx
+      Old renderStackLabel (which silently hid too-small
+      segments) replaced with segmentLabelVertical for CATIA
+      and NX. insideFill swapped per segment so light NX uses
+      foreground text while dark CATIA stays white.
+  - src/components/dashboard/charts/ApplicationBars.tsx
+      Same swap for all four segments (Validation, Execution,
+      Block creation, Viewing). Light segments (chart-2,
+      chart-4) carry insideFill="var(--foreground)".
+
+Charts intentionally not touched (already render labels outside
+the shape, no clipping risk):
+  MonthlyUsage (Area, position=top/bottom)
+  AppCompare (Line, position=top/bottom)
+  MonthlyUsageTotal line mode (Line, position=top/bottom)
+  CadVsAppMatrix (grouped bars, position=top)
+  ApplicationFunctionality (horizontal bar, position=right)
+  CadBars / ApplicationDonut / FluidsSealingsSplit
+    (pies — already have in-slice labels + percent threshold)
 
 ================================================================
 VERIFICATION

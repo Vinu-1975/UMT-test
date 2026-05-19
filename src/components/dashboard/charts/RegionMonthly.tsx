@@ -19,6 +19,7 @@ import { REGIONS } from "@/lib/mock-data";
 import type { FilterDim, Region } from "@/lib/types";
 import { num } from "@/lib/format";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { segmentLabelVertical } from "./segment-label";
 
 export const REGION_MONTHLY_FILTER: {
   id: string;
@@ -58,6 +59,10 @@ const REGION_COLOR: Record<Region, string> = {
 };
 
 type Shape = "stacked" | "grouped" | "line";
+
+// Per-segment labels use the shared `segmentLabelVertical` so tiny
+// values pop out to the right of the bar with a leader — see
+// segment-label.tsx for the rendering details.
 
 type Row = { month: string } & Partial<Record<Region, number>> & { total: number };
 
@@ -193,7 +198,18 @@ export function RegionMonthly() {
                   strokeWidth={2.4}
                   dot={{ r: 3, fill: REGION_COLOR[r], strokeWidth: 0 }}
                   activeDot={{ r: 5 }}
-                />
+                >
+                  <LabelList
+                    dataKey={r}
+                    position="top"
+                    formatter={(v) => (Number(v) > 0 ? num(Number(v)) : "")}
+                    style={{
+                      fill: REGION_COLOR[r],
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  />
+                </Line>
               ))}
             </LineChart>
           ) : (
@@ -251,6 +267,20 @@ export function RegionMonthly() {
                     }
                     maxBarSize={shape === "stacked" ? 48 : 22}
                   >
+                    {shape === "stacked" ? (
+                      <LabelList dataKey={r} content={segmentLabelVertical(REGION_COLOR[r])} />
+                    ) : (
+                      <LabelList
+                        dataKey={r}
+                        position="top"
+                        formatter={(v) => (Number(v) > 0 ? num(Number(v)) : "")}
+                        style={{
+                          fill: REGION_COLOR[r],
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      />
+                    )}
                     {shape === "stacked" && isLast ? (
                       <LabelList
                         dataKey="total"

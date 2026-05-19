@@ -55,7 +55,7 @@ export function ParticlesBackground({ variant = "global" }: Props) {
     const isSidebar = variant === "sidebar";
 
     return {
-      fullScreen: { enable: false },
+      fullScreen: { enable: true },
       background: { color: { value: "transparent" } },
       detectRetina: true,
       fpsLimit: 60,
@@ -63,7 +63,7 @@ export function ParticlesBackground({ variant = "global" }: Props) {
         number: {
           // Sidebar is a small column — use a per-area density so it stays
           // populated even in the narrow 256px width.
-          value: isSidebar ? 28 : 50,
+          value: isSidebar ? 60 : 120,
           density: {
             enable: true,
             width: isSidebar ? 256 : 1920,
@@ -74,8 +74,8 @@ export function ParticlesBackground({ variant = "global" }: Props) {
         shape: { type: "circle" },
         opacity: {
           value: isSidebar
-            ? { min: 0.35, max: 0.7 }
-            : { min: 0.18, max: 0.45 },
+            ? { min: 0.6, max: 0.95 }
+            : { min: 0.6, max: 0.95 },
           animation: {
             enable: !reduced,
             speed: 0.4,
