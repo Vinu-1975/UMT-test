@@ -84,7 +84,7 @@ export function ApplicationFunctionality() {
   if (allKnownApps.length === 0) {
     return (
       <div className="grid h-[340px] place-items-center text-sm text-muted-foreground">
-        No applications match the current filter.
+        No KBE tools match the current filter.
       </div>
     );
   }
@@ -93,16 +93,16 @@ export function ApplicationFunctionality() {
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
-          Pick an application to see how its functionality is distributed.
+          Pick a KBE tool to see how its functionality is distributed.
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedApp} onValueChange={setSelectedApp}>
             <SelectTrigger className="h-9 w-[240px] rounded-lg">
-              <SelectValue placeholder="Choose an application" />
+              <SelectValue placeholder="Choose a KBE tool" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__auto__">
-                Top application{appNames[0] ? ` · ${appNames[0]}` : ""}
+                Top KBE tool{appNames[0] ? ` · ${appNames[0]}` : ""}
               </SelectItem>
               {allKnownApps.map((name) => (
                 <SelectItem key={name} value={name}>
@@ -165,7 +165,7 @@ export function ApplicationFunctionality() {
                 formatter={(v) => {
                   const n = Number(v);
                   return [
-                    `${num(n)} sessions${grand ? ` · ${pct(n / grand)}` : ""}`,
+                    `${num(n)} runs${grand ? ` · ${pct(n / grand)}` : ""}`,
                     "Usage",
                   ];
                 }}

@@ -254,11 +254,11 @@ export function FilterChips() {
 
       <MultiChipPopover
         icon={Layers}
-        label="App"
+        label="Tool"
         options={APPLICATIONS.map((a) => a.name)}
         selected={global.application}
         onChange={(v) => setGlobal({ application: v })}
-        allLabel="All applications"
+        allLabel="All KBE tools"
       />
       <MultiChipPopover
         icon={Cpu}

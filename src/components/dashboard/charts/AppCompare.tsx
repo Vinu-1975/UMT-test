@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { BarChart3, LineChart as LineChartIcon } from "lucide-react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   LabelList,
   Legend,
@@ -22,6 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChartShapeToggle } from "@/components/dashboard/ChartShapeToggle";
+
+type ChartShape = "line" | "bar";
 
 export const APP_COMPARE_FILTER: {
   id: string;
@@ -82,6 +88,7 @@ export function AppCompare() {
 
   const [appA, setAppA] = useState<string>(defaults.first);
   const [appB, setAppB] = useState<string>(defaults.second);
+  const [shape, setShape] = useState<ChartShape>("line");
 
   // Re-seed picks when the filter changes the candidate set (e.g. the user
   // narrows CAD and the previously-selected app is now empty).
@@ -129,7 +136,7 @@ export function AppCompare() {
       {/* Picker row */}
       <div className="flex flex-wrap items-center gap-3 text-xs">
         <PickerField
-          label="Application A"
+          label="KBE tool A"
           value={appA}
           onChange={(v) => {
             if (v === appB) setAppB(appA);
@@ -140,7 +147,7 @@ export function AppCompare() {
           counts={appTotals}
         />
         <PickerField
-          label="Application B"
+          label="KBE tool B"
           value={appB}
           onChange={(v) => {
             if (v === appA) setAppA(appB);
@@ -152,17 +159,30 @@ export function AppCompare() {
         />
         <div className="ml-auto text-muted-foreground">
           <span className="font-medium text-foreground">{num(totalsA)}</span> vs{" "}
-          <span className="font-medium text-foreground">{num(totalsB)}</span> sessions in window
+          <span className="font-medium text-foreground">{num(totalsB)}</span> runs in window
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <ChartShapeToggle
+          value={shape}
+          onChange={setShape}
+          ariaLabel="Chart type"
+          options={[
+            { value: "line", label: "Line", icon: LineChartIcon },
+            { value: "bar", label: "Grouped bar", icon: BarChart3 },
+          ]}
+        />
       </div>
 
       {noData ? (
         <div className="grid h-[280px] place-items-center text-sm text-muted-foreground">
-          Neither application has sessions in the current window.
+          Neither KBE tool has runs in the current window.
         </div>
       ) : (
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
+            {shape === "line" ? (
             <LineChart data={data} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -194,7 +214,7 @@ export function AppCompare() {
                   boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
                 cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
-                formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+                formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Legend
@@ -237,6 +257,86 @@ export function AppCompare() {
                 />
               </Line>
             </LineChart>
+            ) : (
+            <BarChart data={data} margin={{ top: 24, right: 12, left: -8, bottom: 0 }} barCategoryGap="20%">
+              <defs>
+                <linearGradient id="appCompareGradA" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.6} />
+                </linearGradient>
+                <linearGradient id="appCompareGradB" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="month"
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={13}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => num(v)}
+                width={56}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--card)",
+                  fontSize: 13,
+                  padding: "10px 12px",
+                  boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
+                }}
+                cursor={{ fill: "var(--muted)" }}
+                formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
+                labelFormatter={(label) => `Month: ${label}`}
+              />
+              <Legend
+                verticalAlign="top"
+                iconType="circle"
+                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
+              />
+              <Bar
+                dataKey={appA}
+                name={appA}
+                fill="url(#appCompareGradA)"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={28}
+              >
+                <LabelList
+                  dataKey={appA}
+                  position="top"
+                  formatter={(v) => (Number(v) > 0 ? num(Number(v)) : "")}
+                  style={{ fill: "var(--chart-1)", fontSize: 11, fontWeight: 600 }}
+                />
+              </Bar>
+              <Bar
+                dataKey={appB}
+                name={appB}
+                fill="url(#appCompareGradB)"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={28}
+              >
+                <LabelList
+                  dataKey={appB}
+                  position="top"
+                  formatter={(v) => (Number(v) > 0 ? num(Number(v)) : "")}
+                  style={{ fill: "var(--chart-2)", fontSize: 11, fontWeight: 600 }}
+                />
+              </Bar>
+            </BarChart>
+            )}
           </ResponsiveContainer>
         </div>
       )}

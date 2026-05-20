@@ -1,8 +1,9 @@
-import { AppWindow, CalendarDays, Globe2, Layers, Sparkles } from "lucide-react";
+import { Building2, CalendarDays, Globe2, Layers, Sparkles } from "lucide-react";
 import { useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ChartCard } from "@/components/dashboard/ChartCard";
+import { ChartFilterChips } from "@/components/dashboard/ChartFilterChips";
 import {
   MonthlyUsageTotal,
   MONTHLY_TOTAL_FILTER,
@@ -35,10 +36,24 @@ import {
   FluidsSealingsSplit,
   FLUIDS_SEALING_FILTER,
 } from "@/components/dashboard/charts/FluidsSealingsSplit";
-import { useFilters } from "@/lib/filter-context";
+import { useChartFilters } from "@/lib/filter-context";
 import { filterRawSessions } from "@/lib/filtering";
 import { num } from "@/lib/format";
-import { HEADLINE } from "@/lib/mock-data";
+import type { FilterDim } from "@/lib/types";
+
+const HOME_KPI_FILTER: { id: string; applicable: readonly FilterDim[] } = {
+  id: "homeKpis",
+  applicable: [
+    "range",
+    "application",
+    "cad",
+    "productLine",
+    "region",
+    "domain",
+    "hardware",
+    "status",
+  ],
+};
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -59,19 +74,21 @@ function prettyProductLine(value: string): string {
 }
 
 export default function HomePage() {
-  const { global } = useFilters();
+  const { effective: kpiFilters } = useChartFilters(
+    HOME_KPI_FILTER.id,
+    HOME_KPI_FILTER.applicable,
+  );
 
   const kpis = useMemo(() => {
-    const sessions = filterRawSessions(global);
-    const currentYear = new Date().getFullYear();
+    const sessions = filterRawSessions(kpiFilters);
 
-    // Busiest month of the current calendar year.
+    // Busiest month within the active window — bucket every filtered run by
+    // its month index so the KPI tracks whatever range the user picks (this
+    // year, last year, custom, …) instead of hard-coding the calendar year.
     const monthBuckets: number[] = new Array(12).fill(0);
     for (const s of sessions) {
-      const y = parseInt(s.startTime.slice(0, 4), 10);
-      if (y !== currentYear) continue;
       const m = parseInt(s.startTime.slice(5, 7), 10) - 1;
-      if (m >= 0 && m < 12) monthBuckets[m]!++;
+      if (m >= 0 && m < 12) monthBuckets[m]! += 1;
     }
     let busiestIdx = -1;
     let busiestCount = 0;
@@ -105,6 +122,14 @@ export default function HomePage() {
     const sortedReg = [...regCounts.entries()].sort((a, b) => b[1] - a[1]);
     const totalReg = sortedReg.reduce((sum, [, n]) => sum + n, 0) || 1;
 
+    // Top domain (corporate group) by session count.
+    const domCounts = new Map<string, number>();
+    for (const s of sessions) {
+      domCounts.set(s.domain, (domCounts.get(s.domain) ?? 0) + 1);
+    }
+    const sortedDom = [...domCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const totalDom = sortedDom.reduce((sum, [, n]) => sum + n, 0) || 1;
+
     return {
       busiestMonth: busiestIdx >= 0 ? MONTH_NAMES[busiestIdx]! : "—",
       busiestCount,
@@ -115,74 +140,94 @@ export default function HomePage() {
       topProductLineShare: sortedPL[0] ? Math.round((sortedPL[0][1] / totalPL) * 100) : 0,
       topRegion: sortedReg[0]?.[0] ?? "—",
       topRegionShare: sortedReg[0] ? Math.round((sortedReg[0][1] / totalReg) * 100) : 0,
-      applicationsInUse: appCounts.size,
+      topDomain: sortedDom[0]?.[0] ?? "—",
+      topDomainShare: sortedDom[0] ? Math.round((sortedDom[0][1] / totalDom) * 100) : 0,
     };
-  }, [global]);
+  }, [kpiFilters]);
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Welcome back, Alex"
-        description="A friendly overview of how your CAD tools are being used. Each chart carries its own filter chips — tweak any card without touching the others."
+        description="A friendly overview of how Cooper Standard's KBE tools are being run inside CATIA and NX. Each chart carries its own filter chips — tweak any card without touching the others."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <KpiCard
-          label="Busiest month this year"
-          value={kpis.busiestMonth}
-          icon={CalendarDays}
-          caption={
-            kpis.busiestCount > 0
-              ? `${num(kpis.busiestCount)} sessions`
-              : "No sessions yet"
-          }
-          accent="blue"
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div className="space-y-0.5">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
+              Headline KBE metrics
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              The five numbers everyone asks for first — adjust the chips below to scope the whole strip.
+            </p>
+          </div>
+        </div>
+        <ChartFilterChips
+          chartId={HOME_KPI_FILTER.id}
+          applicable={HOME_KPI_FILTER.applicable}
         />
-        <KpiCard
-          label="Most used application"
-          value={kpis.topApp}
-          icon={Sparkles}
-          caption={kpis.secondApp ? `2nd: ${kpis.secondApp}` : `${num(kpis.topAppCount)} sessions`}
-          accent="gold"
-        />
-        <KpiCard
-          label="Applications in use"
-          value={kpis.applicationsInUse}
-          delta={HEADLINE.applicationsDelta}
-          icon={AppWindow}
-          deltaSuffix=" new"
-          helpText="this month"
-          accent="blue"
-        />
-        <KpiCard
-          label="Top product line"
-          value={kpis.topProductLine}
-          icon={Layers}
-          caption={
-            kpis.topProductLineShare > 0
-              ? `${kpis.topProductLineShare}% of sessions`
-              : undefined
-          }
-          accent="gold"
-        />
-        <KpiCard
-          label="Top region"
-          value={REGION_LABELS[kpis.topRegion] ?? kpis.topRegion}
-          icon={Globe2}
-          caption={
-            kpis.topRegionShare > 0
-              ? `${kpis.topRegionShare}% of sessions`
-              : undefined
-          }
-          accent="blue"
-        />
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <KpiCard
+            label="Peak month for KBE runs"
+            value={kpis.busiestMonth}
+            icon={CalendarDays}
+            caption={
+              kpis.busiestCount > 0
+                ? `${num(kpis.busiestCount)} runs`
+                : "No runs yet"
+            }
+            accent="blue"
+          />
+          <KpiCard
+            label="Most-run KBE tool"
+            value={kpis.topApp}
+            icon={Sparkles}
+            caption={kpis.secondApp ? `2nd: ${kpis.secondApp}` : `${num(kpis.topAppCount)} runs`}
+            accent="gold"
+          />
+
+          <KpiCard
+            label="Top product line"
+            value={kpis.topProductLine}
+            icon={Layers}
+            caption={
+              kpis.topProductLineShare > 0
+                ? `${kpis.topProductLineShare}% of runs`
+                : undefined
+            }
+            accent="gold"
+          />
+          <KpiCard
+            label="Top region by runs"
+            value={REGION_LABELS[kpis.topRegion] ?? kpis.topRegion}
+            icon={Globe2}
+            caption={
+              kpis.topRegionShare > 0
+                ? `${kpis.topRegionShare}% of runs`
+                : undefined
+            }
+            accent="blue"
+          />
+          <KpiCard
+            label="Top engineering domain"
+            value={kpis.topDomain}
+            icon={Building2}
+            caption={
+              kpis.topDomainShare > 0
+                ? `${kpis.topDomainShare}% of runs`
+                : undefined
+            }
+            accent="blue"
+          />
+        </div>
+      </section>
 
       <div className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-2">
           <ChartCard
-            title="Which CAD platform is used the most?"
-            description="Sessions grouped by CAD tool, sorted from most-used to least-used."
+            title="Which CAD platform hosts the most KBE tool runs?"
+            description="Tool runs grouped by CAD platform, sorted from most-used to least-used."
             filter={CAD_BARS_FILTER}
             filterStyle="chips"
           >
@@ -190,8 +235,8 @@ export default function HomePage() {
           </ChartCard>
 
           <ChartCard
-            title="Fluids vs Sealings"
-            description="How sessions split across the two main product lines."
+            title="Fluids vs Sealings tool runs"
+            description="How KBE tool runs split across the two main product lines."
             filter={FLUIDS_SEALING_FILTER}
             filterStyle="chips"
           >
@@ -200,8 +245,8 @@ export default function HomePage() {
         </div>
 
         <ChartCard
-          title="What is the overall monthly usage?"
-          description="Total sessions per month, split by CAD platform. Toggle between bar and line view to compare totals at a glance."
+          title="How many KBE tool runs per month?"
+          description="Monthly KBE tool runs, split by CAD platform. Toggle between bar and line view to compare totals at a glance."
           filter={MONTHLY_TOTAL_FILTER}
           filterStyle="chips"
         >
@@ -209,8 +254,8 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="How does each month compare?"
-          description="A single colored tile per month, scaled by total sessions. Spot the year's busy and quiet stretches at a glance."
+          title="Which months are busiest for KBE tools?"
+          description="A single colored tile per month, scaled by total tool runs. Spot the year's busy and quiet stretches at a glance."
           filter={YEAR_HEATMAP_FILTER}
           filterStyle="chips"
         >
@@ -218,8 +263,8 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="When during the year did people log in?"
-          description="A day-by-month heatmap of sessions. Darker cells mark busier days; the row under each column sums the month."
+          title="When during the year are KBE tools run?"
+          description="A day-by-month heatmap of tool runs. Darker cells mark busier days; the row under each column sums the month."
           filter={MONTHLY_HEATMAP_FILTER}
           filterStyle="chips"
         >
@@ -227,8 +272,8 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="How do two applications compare month by month?"
-          description="Pick any two applications to plot their monthly session counts side by side."
+          title="How do two KBE tools compare month by month?"
+          description="Pick any two KBE tools and switch between line or grouped bar to compare monthly run counts."
           filter={APP_COMPARE_FILTER}
           filterStyle="chips"
         >
@@ -236,8 +281,8 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="Which applications are used most?"
-          description="The top six applications by total sessions in the selected window."
+          title="Which KBE tools are run most?"
+          description="The top six KBE tools by total runs in the selected window."
           filter={APP_DONUT_FILTER}
           filterStyle="chips"
         >
@@ -245,8 +290,8 @@ export default function HomePage() {
         </ChartCard>
 
         <ChartCard
-          title="Which functionality is used most in each application?"
-          description="Pick an application to see its top functionalities, ranked by session count."
+          title="Which functionality is used most in each KBE tool?"
+          description="Pick a KBE tool to see its top functionalities, ranked by run count."
           filter={APP_FUNCTIONALITY_FILTER}
           filterStyle="chips"
         >
@@ -256,8 +301,8 @@ export default function HomePage() {
         <div className="grid gap-4 lg:grid-cols-5">
           <ChartCard
             className="lg:col-span-3"
-            title="Where in the world is UMT used?"
-            description="Sessions by region for the selected period."
+            title="Where in the world are KBE tools run?"
+            description="Tool runs by region for the selected period."
             filter={REGION_BARS_FILTER}
             filterStyle="chips"
           >
@@ -265,8 +310,8 @@ export default function HomePage() {
           </ChartCard>
           <ChartCard
             className="lg:col-span-2"
-            title="Which corporate group leads adoption?"
-            description="Sessions grouped by domain, ranked from highest to lowest."
+            title="Which engineering domain runs the most KBE tools?"
+            description="Tool runs grouped by engineering domain, ranked from highest to lowest."
             filter={DOMAIN_LIST_FILTER}
             filterStyle="chips"
           >
@@ -275,8 +320,8 @@ export default function HomePage() {
         </div>
 
         <ChartCard
-          title="How does region usage trend across the year?"
-          description="Monthly session counts split by region — switch between stacked totals, side-by-side bars, or trend lines."
+          title="How does regional KBE usage trend across the year?"
+          description="Monthly run counts split by region — switch between stacked totals, side-by-side bars, or trend lines."
           filter={REGION_MONTHLY_FILTER}
           filterStyle="chips"
         >

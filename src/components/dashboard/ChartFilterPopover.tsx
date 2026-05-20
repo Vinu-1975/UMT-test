@@ -33,8 +33,8 @@ import type {
 
 const DIM_LABEL: Record<FilterDim, string> = {
   range:       "Date range",
-  application: "Application",
-  cad:         "CAD tool",
+  application: "KBE tool",
+  cad:         "CAD platform",
   productLine: "Product line",
   region:      "Region",
   domain:      "Domain",

@@ -11,8 +11,8 @@ export default function SessionsPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Sessions"
-        description="A detailed log of every CAD session. Filter at the page level, or click ‘Filter’ above the table to override just here."
+        title="Tool runs"
+        description="A detailed log of every KBE tool run in CATIA or NX. Filter at the page level, or click ‘Filter’ above the table to override just here."
         action={
           <Button
             variant="outline"
@@ -36,7 +36,7 @@ export default function SessionsPage() {
                   <span className="size-1.5 rounded-full bg-[oklch(0.43_0.17_256)]" />
                   <span className="size-1.5 rounded-full bg-[oklch(0.83_0.16_88)]" />
                 </span>
-                Session log
+                Tool run log
               </h3>
               <p className="text-xs text-muted-foreground">
                 Showing rows that match the page filters above and any local override.

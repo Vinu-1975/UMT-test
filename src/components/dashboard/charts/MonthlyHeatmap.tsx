@@ -179,8 +179,8 @@ export function MonthlyHeatmap() {
                       v === null
                         ? `${m} ${dayNumber}: n/a`
                         : v === 0
-                          ? `${m} ${dayNumber}: 0 sessions`
-                          : `${m} ${dayNumber}: ${num(v)} session${v === 1 ? "" : "s"}`;
+                          ? `${m} ${dayNumber}: 0 runs`
+                          : `${m} ${dayNumber}: ${num(v)} run${v === 1 ? "" : "s"}`;
                     return (
                       <div
                         key={monthIdx}

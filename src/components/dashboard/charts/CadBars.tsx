@@ -4,6 +4,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterCadUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num, pct } from "@/lib/format";
+import { isLightFill, pickTextOnFill } from "./segment-label";
 
 export const CAD_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "cadBars",
@@ -57,7 +58,7 @@ export function CadBars() {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
-              formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+              formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
               contentStyle={{
                 borderRadius: 12,
                 border: "1px solid var(--border)",
@@ -78,34 +79,41 @@ export function CadBars() {
               labelLine={false}
               label={(props: any) => {
                 const RADIAN = Math.PI / 180;
-                const { cx, cy, midAngle, innerRadius, outerRadius, value, percent } = props;
+                const { cx, cy, midAngle, innerRadius, outerRadius, value, percent, index } = props;
                 if (percent < 0.05) return null;
                 const r = (innerRadius + outerRadius) / 2;
                 const x = cx + r * Math.cos(-midAngle * RADIAN);
                 const y = cy + r * Math.sin(-midAngle * RADIAN);
+                const sliceColor = colorAt(index ?? 0, data.length);
+                const fill = pickTextOnFill(sliceColor);
+                // Dark text on light fills doesn't need the dark outline used to
+                // pop white text on darker slices — it would just blur the glyphs.
+                const outline = isLightFill(sliceColor)
+                  ? undefined
+                  : { paintOrder: "stroke" as const, stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 };
                 return (
                   <g>
                     <text
                       x={x}
                       y={y - 7}
-                      fill="#ffffff"
+                      fill={fill}
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize={12}
                       fontWeight={700}
-                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                      style={outline}
                     >
                       {num(value)}
                     </text>
                     <text
                       x={x}
                       y={y + 7}
-                      fill="#ffffff"
+                      fill={fill}
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize={11}
                       fontWeight={600}
-                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                      style={outline}
                     >
                       {`${Math.round(percent * 100)}%`}
                     </text>
@@ -121,14 +129,18 @@ export function CadBars() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Sessions</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Tool runs</div>
           <div className="num mt-0.5 text-2xl font-semibold">{num(grand)}</div>
         </div>
       </div>
 
-      <ul className="space-y-2 text-base">
+      {/* 3-column grid → columns hug their widest cell so name and count
+          sit close together, while rows stay perfectly aligned across the
+          column boundaries. `display:contents` lets each <li> drop its
+          children straight into the parent grid. */}
+      <ul className="grid w-fit grid-cols-[auto_auto_auto] items-center gap-x-4 gap-y-2 text-base">
         {cads.map((c, i) => (
-          <li key={c.cad} className="flex items-center justify-between gap-3">
+          <li key={c.cad} className="contents">
             <div className="flex min-w-0 items-center gap-2.5">
               <span
                 className="block size-3 shrink-0 rounded-full"
@@ -138,12 +150,12 @@ export function CadBars() {
                 {c.cad}
               </span>
             </div>
-            <div className="num flex shrink-0 items-baseline gap-3 tabular-nums">
-              <span className="font-semibold">{num(c.sessions)}</span>
-              <span className="w-12 text-right text-sm text-muted-foreground">
-                {pct(grand > 0 ? c.sessions / grand : 0)}
-              </span>
-            </div>
+            <span className="num text-right font-semibold tabular-nums">
+              {num(c.sessions)}
+            </span>
+            <span className="num text-right text-sm tabular-nums text-muted-foreground">
+              {pct(grand > 0 ? c.sessions / grand : 0)}
+            </span>
           </li>
         ))}
       </ul>

@@ -53,7 +53,7 @@ type DimConfig = {
 };
 
 const DIM_CONFIG: Record<Exclude<FilterDim, "range">, DimConfig> = {
-  application: { icon: Layers,            label: "App",      allLabel: "All applications",  options: APPLICATIONS.map((a) => a.name) },
+  application: { icon: Layers,            label: "Tool",     allLabel: "All KBE tools",     options: APPLICATIONS.map((a) => a.name) },
   cad:         { icon: Cpu,               label: "CAD",      allLabel: "All CAD tools",     options: CAD_TOOLS },
   productLine: { icon: Package,           label: "Product",  allLabel: "All product lines", options: PRODUCT_LINES },
   region:      { icon: Globe2,            label: "Region",   allLabel: "All regions",       options: REGIONS },

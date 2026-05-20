@@ -84,7 +84,7 @@ export function CadVsAppMatrix() {
               padding: "10px 12px",
             }}
             cursor={{ fill: "var(--muted)" }}
-            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+            formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
           />
           <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 8, fontSize: 13 }} />
           {topApps.map((appName, i) => (

@@ -25,13 +25,13 @@ export default function ReportsPage() {
     <div className="space-y-8">
       <PageHeader
         title="Reports"
-        description="Each chart answers a single question and carries its own filter chips — tweak any card without touching the others."
+        description="Each chart answers a single question about Cooper Standard KBE tool usage and carries its own filter chips — tweak any card without touching the others."
       />
 
       <div className="space-y-4">
         <ChartCard
-          title="What is the overall monthly usage?"
-          description="Total sessions per month, split by CAD platform. Toggle between bar and line view to compare totals at a glance."
+          title="How many KBE tool runs per month?"
+          description="Monthly KBE tool runs, split by CAD platform. Toggle between bar and line view to compare totals at a glance."
           filter={MONTHLY_TOTAL_FILTER}
           filterStyle="chips"
         >
@@ -39,8 +39,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="How does each month compare?"
-          description="A single colored tile per month, scaled by total sessions. Spot the year's busy and quiet stretches at a glance."
+          title="Which months are busiest for KBE tools?"
+          description="A single colored tile per month, scaled by total tool runs. Spot the year's busy and quiet stretches at a glance."
           filter={YEAR_HEATMAP_FILTER}
           filterStyle="chips"
         >
@@ -48,8 +48,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="When during the year did people log in?"
-          description="A day-by-month heatmap of sessions. Darker cells mark busier days; the row under each column sums the month."
+          title="When during the year are KBE tools run?"
+          description="A day-by-month heatmap of tool runs. Darker cells mark busier days; the row under each column sums the month."
           filter={MONTHLY_HEATMAP_FILTER}
           filterStyle="chips"
         >
@@ -57,8 +57,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="How do two applications compare month by month?"
-          description="Pick any two applications to plot their monthly session counts side by side."
+          title="How do two KBE tools compare month by month?"
+          description="Pick any two KBE tools to plot their monthly run counts side by side."
           filter={APP_COMPARE_FILTER}
           filterStyle="chips"
         >
@@ -66,8 +66,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Which applications are used most?"
-          description="The top six applications by total sessions in the selected window."
+          title="Which KBE tools are run most?"
+          description="The top six KBE tools by total runs in the selected window."
           filter={APP_DONUT_FILTER}
           filterStyle="chips"
         >
@@ -75,8 +75,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="What are people doing inside each app?"
-          description="A breakdown of sessions by activity type for the busiest apps."
+          title="What are engineers doing inside each KBE tool?"
+          description="A breakdown of runs by activity type for the busiest tools."
           filter={APP_BARS_FILTER}
           filterStyle="chips"
         >
@@ -84,8 +84,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Which functionality is used most in each application?"
-          description="Pick an application to see its top functionalities, ranked by session count."
+          title="Which functionality is used most in each KBE tool?"
+          description="Pick a KBE tool to see its top functionalities, ranked by run count."
           filter={APP_FUNCTIONALITY_FILTER}
           filterStyle="chips"
         >
@@ -93,8 +93,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Which CAD platform is used the most?"
-          description="Sessions grouped by CAD tool, sorted from most-used to least-used."
+          title="Which CAD platform hosts the most KBE tool runs?"
+          description="Tool runs grouped by CAD platform, sorted from most-used to least-used."
           filter={CAD_BARS_FILTER}
           filterStyle="chips"
         >
@@ -102,8 +102,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="How do top apps differ across CAD tools?"
-          description="The five busiest applications, plotted against each CAD platform."
+          title="How do top KBE tools differ across CAD platforms?"
+          description="The five busiest KBE tools, plotted against each CAD platform."
           filter={CAD_MATRIX_FILTER}
           filterStyle="chips"
         >
@@ -113,8 +113,8 @@ export default function ReportsPage() {
         <div className="grid gap-4 lg:grid-cols-5">
           <ChartCard
             className="lg:col-span-3"
-            title="Where in the world is UMT used?"
-            description="Sessions by region for the selected period."
+            title="Where in the world are KBE tools run?"
+            description="Tool runs by region for the selected period."
             filter={REGION_BARS_FILTER}
             filterStyle="chips"
           >
@@ -122,8 +122,8 @@ export default function ReportsPage() {
           </ChartCard>
           <ChartCard
             className="lg:col-span-2"
-            title="Which corporate group leads adoption?"
-            description="Sessions grouped by domain, ranked from highest to lowest."
+            title="Which engineering domain runs the most KBE tools?"
+            description="Tool runs grouped by engineering domain, ranked from highest to lowest."
             filter={DOMAIN_LIST_FILTER}
             filterStyle="chips"
           >
@@ -132,8 +132,8 @@ export default function ReportsPage() {
         </div>
 
         <ChartCard
-          title="How does region usage trend across the year?"
-          description="Monthly session counts split by region — switch between stacked totals, side-by-side bars, or trend lines."
+          title="How does regional KBE usage trend across the year?"
+          description="Monthly run counts split by region — switch between stacked totals, side-by-side bars, or trend lines."
           filter={REGION_MONTHLY_FILTER}
           filterStyle="chips"
         >
@@ -141,8 +141,8 @@ export default function ReportsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Fluids vs Sealings"
-          description="How sessions split across the two main product lines."
+          title="Fluids vs Sealings tool runs"
+          description="How KBE tool runs split across the two main product lines."
           filter={FLUIDS_SEALING_FILTER}
           filterStyle="chips"
         >

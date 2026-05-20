@@ -18,7 +18,7 @@ import { filterRawSessions } from "@/lib/filtering";
 import { REGIONS } from "@/lib/mock-data";
 import type { FilterDim, Region } from "@/lib/types";
 import { num } from "@/lib/format";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ChartShapeToggle } from "@/components/dashboard/ChartShapeToggle";
 import { segmentLabelVertical } from "./segment-label";
 
 export const REGION_MONTHLY_FILTER: {
@@ -124,29 +124,16 @@ export function RegionMonthly() {
   return (
     <div className="space-y-2">
       <div className="flex justify-end">
-        <ToggleGroup
-          type="single"
+        <ChartShapeToggle
           value={shape}
-          onValueChange={(v) => {
-            if (v === "stacked" || v === "grouped" || v === "line") setShape(v);
-          }}
-          variant="outline"
-          size="sm"
-          aria-label="Chart type"
-        >
-          <ToggleGroupItem value="stacked" aria-label="Stacked bars">
-            <Layers className="size-3.5" />
-            Stacked
-          </ToggleGroupItem>
-          <ToggleGroupItem value="grouped" aria-label="Grouped bars">
-            <BarChart3 className="size-3.5" />
-            Grouped
-          </ToggleGroupItem>
-          <ToggleGroupItem value="line" aria-label="Line chart">
-            <LineChartIcon className="size-3.5" />
-            Line
-          </ToggleGroupItem>
-        </ToggleGroup>
+          onChange={setShape}
+          ariaLabel="Chart type"
+          options={[
+            { value: "stacked", label: "Stacked", icon: Layers },
+            { value: "grouped", label: "Grouped", icon: BarChart3 },
+            { value: "line", label: "Line", icon: LineChartIcon },
+          ]}
+        />
       </div>
 
       <div className="h-[320px] w-full">
@@ -179,7 +166,7 @@ export function RegionMonthly() {
                   boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
                 cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
-                formatter={(v, name) => [`${num(Number(v))} sessions`, REGION_FULL[name as Region] ?? (name as string)]}
+                formatter={(v, name) => [`${num(Number(v))} runs`, REGION_FULL[name as Region] ?? (name as string)]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Legend
@@ -240,7 +227,7 @@ export function RegionMonthly() {
                   boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
                 cursor={{ fill: "var(--muted)" }}
-                formatter={(v, name) => [`${num(Number(v))} sessions`, REGION_FULL[name as Region] ?? (name as string)]}
+                formatter={(v, name) => [`${num(Number(v))} runs`, REGION_FULL[name as Region] ?? (name as string)]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Legend

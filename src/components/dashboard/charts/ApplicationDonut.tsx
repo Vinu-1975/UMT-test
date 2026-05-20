@@ -4,6 +4,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterApplicationUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num, pct } from "@/lib/format";
+import { isLightFill, pickTextOnFill } from "./segment-label";
 
 export const APP_DONUT_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "appDonut",
@@ -49,10 +50,15 @@ export function ApplicationDonut() {
   if (apps.length === 0) {
     return (
       <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">
-        No applications match the current filter.
+        No KBE tools match the current filter.
       </div>
     );
   }
+
+  // Split the legend into two side-by-side columns so we don't need a
+  // scrollbar — first column holds the busier half, second column the rest.
+  const half = Math.ceil(apps.length / 2);
+  const legendColumns = [apps.slice(0, half), apps.slice(half)];
 
   return (
     <div className="flex flex-col items-center justify-evenly gap-6 md:flex-row md:gap-0">
@@ -60,7 +66,7 @@ export function ApplicationDonut() {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
-              formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+              formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
               contentStyle={{
                 borderRadius: 12,
                 border: "1px solid var(--border)",
@@ -81,34 +87,39 @@ export function ApplicationDonut() {
               labelLine={false}
               label={(props: any) => {
                 const RADIAN = Math.PI / 180;
-                const { cx, cy, midAngle, innerRadius, outerRadius, value, percent } = props;
+                const { cx, cy, midAngle, innerRadius, outerRadius, value, percent, index } = props;
                 if (percent < 0.04) return null;
                 const r = (innerRadius + outerRadius) / 2;
                 const x = cx + r * Math.cos(-midAngle * RADIAN);
                 const y = cy + r * Math.sin(-midAngle * RADIAN);
+                const sliceColor = colorAt(index ?? 0, data.length);
+                const fill = pickTextOnFill(sliceColor);
+                const outline = isLightFill(sliceColor)
+                  ? undefined
+                  : { paintOrder: "stroke" as const, stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 };
                 return (
                   <g>
                     <text
                       x={x}
                       y={y - 8}
-                      fill="#ffffff"
+                      fill={fill}
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize={13}
                       fontWeight={700}
-                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                      style={outline}
                     >
                       {num(value)}
                     </text>
                     <text
                       x={x}
                       y={y + 8}
-                      fill="#ffffff"
+                      fill={fill}
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize={11}
                       fontWeight={600}
-                      style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
+                      style={outline}
                     >
                       {`${Math.round(percent * 100)}%`}
                     </text>
@@ -124,44 +135,62 @@ export function ApplicationDonut() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Total sessions</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Total runs</div>
           <div className="num mt-0.5 text-3xl font-semibold">{num(grand)}</div>
-          <div className="text-xs text-muted-foreground">across {apps.length} apps</div>
+          <div className="text-xs text-muted-foreground">across {apps.length} KBE tools</div>
         </div>
       </div>
 
-      <ul className="w-full max-w-[260px] shrink-0 space-y-0.5 overflow-y-auto pr-1 md:w-[220px] md:max-h-[440px]">
-        {apps.map((a, i) => (
-          <li
-            key={a.application}
-            className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 hover:bg-muted/40"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <span
-                className="block size-2.5 shrink-0 rounded-full"
-                style={{ background: colorAt(i, apps.length) }}
-              />
-              <div className="min-w-0">
-                <div
-                  className="truncate text-[13px] font-medium leading-tight"
-                  title={a.application}
-                >
-                  {a.application}
-                </div>
-                <div className="truncate text-[10px] leading-tight text-muted-foreground">
-                  {a.cad} · {a.productLine}
-                </div>
-              </div>
-            </div>
-            <div className="num flex shrink-0 items-baseline gap-1.5 tabular-nums">
-              <span className="text-[13px] font-semibold">{num(a.total)}</span>
-              <span className="w-9 text-right text-[10px] text-muted-foreground">
-                {pct(a.total / grand)}
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {/* Two side-by-side legend columns instead of one long scrollable
+          list. Each inner <ul> is its own 3-column grid (name | count |
+          percent) where `display:contents` on the <li> lets the row's
+          three cells participate in the parent grid so columns stay
+          aligned across every row in that column. */}
+      <div className="flex shrink-0 gap-6">
+        {legendColumns.map((col, colIdx) => {
+          const offset = colIdx === 0 ? 0 : half;
+          return (
+            <ul
+              key={colIdx}
+              className="grid w-fit grid-cols-[auto_auto_auto] items-center gap-x-3 gap-y-1 self-start"
+            >
+              {col.map((a, j) => {
+                const i = offset + j; // absolute index → matches pie slice colour
+                return (
+                  <li
+                    key={a.application}
+                    className="contents [&>*]:rounded-md [&>*]:py-1 hover:[&>*]:bg-muted/40"
+                  >
+                    <div className="flex min-w-0 items-center gap-2 pl-1.5">
+                      <span
+                        className="block size-2.5 shrink-0 rounded-full"
+                        style={{ background: colorAt(i, apps.length) }}
+                      />
+                      <div className="min-w-0">
+                        <div
+                          className="truncate text-[13px] font-medium leading-tight"
+                          title={a.application}
+                        >
+                          {a.application}
+                        </div>
+                        <div className="truncate text-[10px] leading-tight text-muted-foreground">
+                          {a.cad} · {a.productLine}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="num text-right text-[13px] font-semibold tabular-nums">
+                      {num(a.total)}
+                    </span>
+                    <span className="num pr-1.5 text-right text-[10px] tabular-nums text-muted-foreground">
+                      {pct(a.total / grand)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        })}
+      </div>
     </div>
   );
 }

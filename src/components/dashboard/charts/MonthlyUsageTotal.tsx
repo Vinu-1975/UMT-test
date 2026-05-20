@@ -18,8 +18,69 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterMonthlyCad } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ChartShapeToggle } from "@/components/dashboard/ChartShapeToggle";
 import { segmentLabelVertical } from "./segment-label";
+import { cn } from "@/lib/utils";
+
+const CAD_LEGEND_ITEMS: ReadonlyArray<{ name: "CATIA" | "NX"; color: string }> = [
+  { name: "CATIA", color: "var(--chart-1)" },
+  { name: "NX", color: "var(--chart-2)" },
+];
+
+/**
+ * Clickable Recharts-style legend that doubles as a CAD filter. Clicking a
+ * pill isolates that CAD; clicking it again (when it's the lone selection)
+ * clears the filter and restores both. Selection state lives in the chart's
+ * own override slot so it doesn't leak out to the rest of the dashboard.
+ */
+function CadFilterLegend({
+  selectedCads,
+  onToggle,
+}: {
+  selectedCads: readonly string[];
+  onToggle: (cad: "CATIA" | "NX") => void;
+}) {
+  const hasFilter = selectedCads.length > 0;
+  return (
+    <div className="flex justify-center gap-2 pb-2 text-[13px]">
+      {CAD_LEGEND_ITEMS.map((item) => {
+        const isOn = selectedCads.includes(item.name);
+        const isMuted = hasFilter && !isOn;
+        return (
+          <button
+            key={item.name}
+            type="button"
+            onClick={() => onToggle(item.name)}
+            aria-pressed={hasFilter ? isOn : false}
+            title={
+              isOn
+                ? `Clear ${item.name} filter`
+                : hasFilter
+                  ? `Switch to ${item.name}`
+                  : `Show only ${item.name}`
+            }
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium transition-colors",
+              "hover:bg-[oklch(0.83_0.16_88_/_0.22)] hover:text-foreground",
+              isOn
+                ? "bg-primary/10 text-foreground ring-1 ring-primary/30"
+                : isMuted
+                  ? "text-muted-foreground/70 opacity-70"
+                  : "text-foreground",
+            )}
+          >
+            <span
+              aria-hidden
+              className="block size-2 rounded-full"
+              style={{ background: item.color }}
+            />
+            {item.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // Per-segment labels use the shared `segmentLabelVertical` so tiny
 // values pop out to the right of the bar with a leader instead of
@@ -44,7 +105,7 @@ export const MONTHLY_TOTAL_FILTER: {
 type ChartShape = "bar" | "line";
 
 export function MonthlyUsageTotal() {
-  const { effective } = useChartFilters(
+  const { effective, setOverride } = useChartFilters(
     MONTHLY_TOTAL_FILTER.id,
     MONTHLY_TOTAL_FILTER.applicable,
   );
@@ -54,6 +115,13 @@ export function MonthlyUsageTotal() {
 
   const showCatia = effective.cad.length === 0 || effective.cad.includes("CATIA");
   const showNx    = effective.cad.length === 0 || effective.cad.includes("NX");
+
+  // Legend pill click → isolate that CAD via the chart's own filter override.
+  // Clicking the lone selection again clears the filter (restores both CADs).
+  const toggleCad = (cad: "CATIA" | "NX") => {
+    const isOnly = effective.cad.length === 1 && effective.cad[0] === cad;
+    setOverride({ cad: isOnly ? [] : [cad] });
+  };
 
   const average = useMemo(() => {
     if (data.length === 0) return 0;
@@ -72,25 +140,15 @@ export function MonthlyUsageTotal() {
   return (
     <div className="space-y-2">
       <div className="flex justify-end">
-        <ToggleGroup
-          type="single"
+        <ChartShapeToggle
           value={shape}
-          onValueChange={(v) => {
-            if (v === "bar" || v === "line") setShape(v);
-          }}
-          variant="outline"
-          size="sm"
-          aria-label="Chart type"
-        >
-          <ToggleGroupItem value="bar" aria-label="Bar chart">
-            <BarChart3 className="size-3.5" />
-            Bar
-          </ToggleGroupItem>
-          <ToggleGroupItem value="line" aria-label="Line chart">
-            <LineChartIcon className="size-3.5" />
-            Line
-          </ToggleGroupItem>
-        </ToggleGroup>
+          onChange={setShape}
+          ariaLabel="Chart type"
+          options={[
+            { value: "bar", label: "Bar", icon: BarChart3 },
+            { value: "line", label: "Line", icon: LineChartIcon },
+          ]}
+        />
       </div>
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -139,13 +197,18 @@ export function MonthlyUsageTotal() {
                   boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
                 cursor={{ fill: "var(--muted)" }}
-                formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+                formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Legend
                 verticalAlign="top"
-                iconType="circle"
-                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
+                wrapperStyle={{ paddingBottom: 8 }}
+                content={() => (
+                  <CadFilterLegend
+                    selectedCads={effective.cad}
+                    onToggle={toggleCad}
+                  />
+                )}
               />
               {average > 0 ? (
                 <ReferenceLine
@@ -278,13 +341,18 @@ export function MonthlyUsageTotal() {
                   boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
                 }}
                 cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
-                formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+                formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Legend
                 verticalAlign="top"
-                iconType="circle"
-                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
+                wrapperStyle={{ paddingBottom: 8 }}
+                content={() => (
+                  <CadFilterLegend
+                    selectedCads={effective.cad}
+                    onToggle={toggleCad}
+                  />
+                )}
               />
               {average > 0 ? (
                 <ReferenceLine

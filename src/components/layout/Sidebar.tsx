@@ -21,7 +21,7 @@ type Item = {
 const NAV_PRIMARY: Item[] = [
   { to: "/",         icon: Home,       label: "Home",       description: "Headline overview" },
   { to: "/reports",  icon: BarChart3,  label: "Reports",    description: "Charts & insights" },
-  { to: "/sessions", icon: ListChecks, label: "Sessions",   description: "Detailed log of all activity" },
+  { to: "/sessions", icon: ListChecks, label: "Tool runs",  description: "Detailed log of every KBE tool run" },
 ];
 
 const NAV_ADMIN: Item[] = [

@@ -78,12 +78,12 @@ export function SessionsTable() {
             }}
             placeholder="Search by user, app, machine, region…"
             className="h-10 rounded-xl pl-9"
-            aria-label="Search sessions"
+            aria-label="Search tool runs"
           />
         </div>
         <div className="text-xs text-muted-foreground">
           Showing <span className="font-medium text-foreground">{visible.length}</span> of{" "}
-          <span className="font-medium text-foreground">{filtered.length}</span> sessions
+          <span className="font-medium text-foreground">{filtered.length}</span> runs
         </div>
       </div>
 

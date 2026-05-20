@@ -37,6 +37,21 @@ export function KpiCard({
   const isGold = accent === "gold";
   const isText = typeof value === "string";
   const displayValue = isText ? value : num(value);
+  // Adapt the value's font size to the longest "word" in the string so
+  // multi-word names (e.g. "POINT CHART") shrink to fit instead of being
+  // truncated to "POINT CH…". Numbers always stay big.
+  const longestWord = isText
+    ? value.split(/\s+/).reduce((m, w) => Math.max(m, w.length), 0)
+    : 0;
+  const textSizeClass = !isText
+    ? "text-3xl md:text-[34px]"
+    : longestWord <= 6
+      ? "text-2xl md:text-[26px]"
+      : longestWord <= 9
+        ? "text-xl md:text-[22px]"
+        : longestWord <= 12
+          ? "text-lg md:text-xl"
+          : "text-base md:text-lg";
   return (
     <Card className="brand-edge-top card-hover overflow-hidden">
       <CardContent className="p-5">
@@ -47,10 +62,10 @@ export function KpiCard({
               title={isText ? value : undefined}
               className={cn(
                 "num mt-2 font-semibold tracking-tight",
-                // String values get smaller type + truncation; numbers stay big.
-                isText
-                  ? "truncate text-2xl md:text-[26px]"
-                  : "text-3xl md:text-[34px]",
+                textSizeClass,
+                // String values wrap (up to 2 lines) instead of truncating, so
+                // long names like "POINT CHART" stay fully readable.
+                isText ? "break-words leading-tight line-clamp-2" : undefined,
                 // Brand-coloured value — the row reads as the swoosh
                 // (blue, gold, blue, gold) before any number is parsed.
                 isGold

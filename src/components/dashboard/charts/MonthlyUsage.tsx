@@ -77,7 +77,7 @@ export function MonthlyUsage() {
               boxShadow: "0 8px 24px -12px rgba(0,0,0,0.15)",
             }}
             cursor={{ stroke: "var(--border)", strokeDasharray: "3 3" }}
-            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+            formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
             labelFormatter={(label) => `Month: ${label}`}
           />
           <Legend

@@ -72,7 +72,7 @@ export function ApplicationBars() {
               padding: "10px 12px",
             }}
             cursor={{ fill: "var(--muted)" }}
-            formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+            formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
           />
           <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 12, fontSize: 13 }} />
           <Bar dataKey="validation" stackId="a" name="Validation" fill="var(--chart-1)">

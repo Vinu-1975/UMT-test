@@ -10,15 +10,12 @@ import type {
 } from "./types";
 import {
   APPLICATIONS,
-  APPLICATION_USAGE,
-  CAD_USAGE,
-  DOMAIN_USAGE,
-  FLUIDS_SEALING_SPLIT,
-  MONTHLY_CAD_USAGE,
   MONTHLY_USAGE,
   RAW_SESSIONS,
   REGION_USAGE,
+  bucketFunctionality,
 } from "./mock-data";
+import type { CadTool } from "./types";
 
 // ── Range helpers ──────────────────────────────────────────────────────
 
@@ -109,48 +106,87 @@ export function filterMonthly(filters: FilterState): MonthlyUsagePoint[] {
 }
 
 export function filterMonthlyCad(filters: FilterState): MonthlyCadUsagePoint[] {
-  const sliced = MONTHLY_CAD_USAGE.slice(...rangeSlice(filters));
-  const scale = approximateUsageScale(filters);
-  // When the user has selected one CAD tool, zero out the other. With both
-  // (or neither) selected, the chart shows both series.
-  return sliced.map((m) => {
-    const catia = matches(filters.cad, "CATIA") ? Math.round(m.CATIA * scale) : 0;
-    const nx    = matches(filters.cad, "NX")    ? Math.round(m.NX * scale)    : 0;
-    return { month: m.month, CATIA: catia, NX: nx, total: catia + nx };
-  });
+  // Compute from the filtered raw session stream so every chip
+  // (range, application, cad, productLine, region, domain, hardware, status)
+  // bites instead of falling back to a coarse scalar shrink.
+  const sessions = filterRawSessions(filters);
+  type Bucket = { key: string; label: string; CATIA: number; NX: number };
+  const buckets = new Map<string, Bucket>();
+  const monthLabel = (d: Date) =>
+    `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+  for (const s of sessions) {
+    const d = new Date(s.startTime);
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
+    let b = buckets.get(key);
+    if (!b) {
+      b = { key, label: monthLabel(d), CATIA: 0, NX: 0 };
+      buckets.set(key, b);
+    }
+    if (s.cad === "CATIA") b.CATIA += 1;
+    else if (s.cad === "NX") b.NX += 1;
+  }
+  return [...buckets.values()]
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((b) => ({
+      month: b.label,
+      CATIA: b.CATIA,
+      NX: b.NX,
+      total: b.CATIA + b.NX,
+    }));
 }
 
 export function filterApplicationUsage(filters: FilterState): ApplicationUsage[] {
-  return APPLICATION_USAGE.filter((u) => {
-    if (!matches(filters.application, u.application)) return false;
-    if (!matches(filters.cad, u.cad)) return false;
-    if (!matches(filters.productLine, u.productLine)) return false;
-    return true;
-  });
+  // Aggregate per application from the filtered raw session stream so every
+  // chip on the donut / functionality charts actually moves the numbers.
+  const sessions = filterRawSessions(filters);
+  type Row = {
+    cad: CadTool;
+    productLine: string;
+    total: number;
+    validation: number;
+    execution: number;
+    blockCreation: number;
+    viewOps: number;
+  };
+  const byApp = new Map<string, Row>();
+  for (const s of sessions) {
+    let r = byApp.get(s.application);
+    if (!r) {
+      r = {
+        cad: s.cad,
+        productLine: s.productLine,
+        total: 0,
+        validation: 0,
+        execution: 0,
+        blockCreation: 0,
+        viewOps: 0,
+      };
+      byApp.set(s.application, r);
+    }
+    r.total += 1;
+    r[bucketFunctionality(s.functionality)] += 1;
+  }
+  return [...byApp.entries()]
+    .map(([application, r]) => ({ application, ...r }))
+    .sort((a, b) => b.total - a.total);
 }
 
 export function filterCadUsage(filters: FilterState): CadUsage[] {
-  if (filters.cad.length > 0) {
-    return CAD_USAGE.filter((c) => filters.cad.includes(c.cad));
-  }
-  const apps = filterApplicationUsage(filters);
-  const totals = new Map<string, number>();
-  for (const a of apps) totals.set(a.cad, (totals.get(a.cad) ?? 0) + a.total);
+  // Count directly from filtered raw sessions so region/domain/hardware/etc.
+  // chips bite, instead of inheriting the limited-scope filterApplicationUsage.
+  const sessions = filterRawSessions(filters);
+  const totals = new Map<CadTool, number>();
+  for (const s of sessions) totals.set(s.cad, (totals.get(s.cad) ?? 0) + 1);
   const grand = [...totals.values()].reduce((s, v) => s + v, 0) || 1;
   return [...totals.entries()]
-    .map(([cad, sessions]) => ({
-      cad: cad as CadUsage["cad"],
-      sessions,
-      share: sessions / grand,
-    }))
+    .map(([cad, sessions]) => ({ cad, sessions, share: sessions / grand }))
     .sort((a, b) => b.sessions - a.sessions);
 }
 
 export function filterRegionUsage(filters: FilterState): RegionUsage[] {
   // Count regions directly from the filtered raw session set so every chip
   // (range, application, cad, productLine, region, domain, hardware, status)
-  // actually moves the numbers. The previous implementation only scaled the
-  // static REGION_USAGE totals, which made most chips look like no-ops.
+  // actually moves the numbers.
   const sessions = filterRawSessions(filters);
   const counts = new Map<string, number>();
   for (const s of sessions) counts.set(s.region, (counts.get(s.region) ?? 0) + 1);
@@ -161,24 +197,31 @@ export function filterRegionUsage(filters: FilterState): RegionUsage[] {
 }
 
 export function filterDomainUsage(filters: FilterState): DomainUsage[] {
-  const scale = approximateUsageScale(filters);
-  const filtered = filters.domain.length > 0
-    ? DOMAIN_USAGE.filter((d) => filters.domain.includes(d.domain))
-    : DOMAIN_USAGE;
-  return filtered.map((d) => ({ ...d, sessions: Math.round(d.sessions * scale) }));
+  // Tally domains from the filtered raw sessions instead of scaling a static
+  // total — that way every chip (range, app, cad, productLine, region,
+  // hardware, status) shifts the ranking and the bar widths.
+  const sessions = filterRawSessions(filters);
+  const counts = new Map<string, number>();
+  for (const s of sessions) counts.set(s.domain, (counts.get(s.domain) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([domain, sessions]) => ({ domain, sessions }))
+    .filter((d) => d.sessions > 0)
+    .sort((a, b) => b.sessions - a.sessions);
 }
 
 export function filterFluidsSealingsSplit(filters: FilterState) {
-  const scale = approximateUsageScale(filters);
-  // The donut is itself a product-line breakdown. If the user has narrowed
-  // productLine, hide the slices that fall outside the selection.
-  const lines = filters.productLine;
-  return FLUIDS_SEALING_SPLIT
-    .filter((p) =>
-      lines.length === 0 ||
-      lines.includes(p.name === "Fluids" ? "FLUIDS" : "SEALING"),
-    )
-    .map((p) => ({ ...p, value: Math.round(p.value * scale) }));
+  // Split the filtered raw sessions by product line directly.
+  const sessions = filterRawSessions(filters);
+  let fluids = 0;
+  let sealings = 0;
+  for (const s of sessions) {
+    if (s.productLine === "FLUIDS") fluids += 1;
+    else if (s.productLine === "SEALING") sealings += 1;
+  }
+  return [
+    { name: "Fluids", value: fluids },
+    { name: "Sealings", value: sealings },
+  ].filter((p) => p.value > 0);
 }
 
 export function filterRawSessions(filters: FilterState): RawSessionRow[] {

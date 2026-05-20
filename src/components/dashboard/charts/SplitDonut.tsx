@@ -1,5 +1,6 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { num, pct } from "@/lib/format";
+import { isLightFill, pickTextOnFill } from "./segment-label";
 
 export type SplitItem = { name: string; value: number };
 
@@ -11,53 +12,64 @@ type SliceLabelProps = {
   outerRadius?: number;
   value?: number;
   percent?: number;
+  index?: number;
 };
 
 // Two-line slice label: bold number on top, % underneath. Sits in the
 // thickest part of the donut ring so it reads at a glance without hovering.
-function renderSliceLabel(props: SliceLabelProps) {
-  const {
-    cx = 0,
-    cy = 0,
-    midAngle = 0,
-    innerRadius = 0,
-    outerRadius = 0,
-    value = 0,
-    percent = 0,
-  } = props;
-  if (percent < 0.04) return null;
-  const RADIAN = Math.PI / 180;
-  const r = (innerRadius + outerRadius) / 2;
-  const x = cx + r * Math.cos(-midAngle * RADIAN);
-  const y = cy + r * Math.sin(-midAngle * RADIAN);
-  return (
-    <g>
-      <text
-        x={x}
-        y={y - 7}
-        fill="#ffffff"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={12}
-        fontWeight={700}
-        style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
-      >
-        {num(value)}
-      </text>
-      <text
-        x={x}
-        y={y + 7}
-        fill="#ffffff"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={11}
-        fontWeight={600}
-        style={{ paintOrder: "stroke", stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 }}
-      >
-        {`${Math.round(percent * 100)}%`}
-      </text>
-    </g>
-  );
+// `colors` is closed over so the label can pick a dark text colour when the
+// slice happens to land on a light/yellow fill.
+function makeRenderSliceLabel(colors: readonly string[]) {
+  return function renderSliceLabel(props: SliceLabelProps) {
+    const {
+      cx = 0,
+      cy = 0,
+      midAngle = 0,
+      innerRadius = 0,
+      outerRadius = 0,
+      value = 0,
+      percent = 0,
+      index = 0,
+    } = props;
+    if (percent < 0.04) return null;
+    const RADIAN = Math.PI / 180;
+    const r = (innerRadius + outerRadius) / 2;
+    const x = cx + r * Math.cos(-midAngle * RADIAN);
+    const y = cy + r * Math.sin(-midAngle * RADIAN);
+    const sliceColor = colors[index % colors.length] ?? "var(--chart-1)";
+    const fill = pickTextOnFill(sliceColor);
+    const outline = isLightFill(sliceColor)
+      ? undefined
+      : { paintOrder: "stroke" as const, stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 };
+    return (
+      <g>
+        <text
+          x={x}
+          y={y - 7}
+          fill={fill}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={12}
+          fontWeight={700}
+          style={outline}
+        >
+          {num(value)}
+        </text>
+        <text
+          x={x}
+          y={y + 7}
+          fill={fill}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={11}
+          fontWeight={600}
+          style={outline}
+        >
+          {`${Math.round(percent * 100)}%`}
+        </text>
+      </g>
+    );
+  };
 }
 
 export function SplitDonut({
@@ -77,7 +89,7 @@ export function SplitDonut({
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
-              formatter={(v, name) => [`${num(Number(v))} sessions`, name as string]}
+              formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
               contentStyle={{
                 borderRadius: 12,
                 border: "1px solid var(--border)",
@@ -96,7 +108,7 @@ export function SplitDonut({
               stroke="var(--card)"
               strokeWidth={3}
               labelLine={false}
-              label={renderSliceLabel}
+              label={makeRenderSliceLabel(colors)}
               isAnimationActive={false}
             >
               {data.map((_, i) => (
@@ -113,22 +125,26 @@ export function SplitDonut({
         </div>
       </div>
 
-      <ul className="space-y-3 text-base">
+      {/* 3-column grid → columns hug their widest cell so name and count
+          sit close together, while rows stay perfectly aligned across the
+          column boundaries. `display:contents` lets each <li> drop its
+          children straight into the parent grid. */}
+      <ul className="grid w-fit grid-cols-[auto_auto_auto] items-center gap-x-4 gap-y-3 text-base">
         {data.map((d, i) => (
-          <li key={d.name} className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+          <li key={d.name} className="contents">
+            <div className="flex min-w-0 items-center gap-2.5">
               <span
-                className="block size-3 rounded-full"
+                className="block size-3 shrink-0 rounded-full"
                 style={{ background: colors[i % colors.length] }}
               />
-              <span className="font-medium">{d.name}</span>
+              <span className="truncate font-medium">{d.name}</span>
             </div>
-            <div className="num flex items-baseline gap-3 tabular-nums">
-              <span className="font-semibold">{num(d.value)}</span>
-              <span className="w-12 text-right text-sm text-muted-foreground">
-                {pct(d.value / total)}
-              </span>
-            </div>
+            <span className="num text-right font-semibold tabular-nums">
+              {num(d.value)}
+            </span>
+            <span className="num text-right text-sm tabular-nums text-muted-foreground">
+              {pct(d.value / total)}
+            </span>
           </li>
         ))}
       </ul>

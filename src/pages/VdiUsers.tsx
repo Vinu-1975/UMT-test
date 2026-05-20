@@ -273,7 +273,7 @@ export default function VdiUsersPage() {
         open={deleting != null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title={deleting ? `Delete ${deleting.fullName}?` : "Delete user?"}
-        description="This permanently removes the VDI user record. Their session history will remain in reports."
+        description="This permanently removes the VDI user record. Their tool run history will remain in reports."
         confirmLabel="Delete"
         destructive
         onConfirm={() => {
@@ -288,7 +288,7 @@ export default function VdiUsersPage() {
         <CardContent className="flex items-center gap-3 p-5">
           <UserCheck className="size-5 text-primary" />
           <div className="text-sm text-muted-foreground">
-            Tip — set a user to <span className="font-medium">Disabled</span> to keep their session history. Use <span className="font-medium">Delete</span> only when removing a record entirely.
+            Tip — set a user to <span className="font-medium">Disabled</span> to keep their tool run history. Use <span className="font-medium">Delete</span> only when removing a record entirely.
           </div>
         </CardContent>
       </Card>

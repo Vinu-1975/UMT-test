@@ -95,7 +95,7 @@ export const APPLICATIONS: Application[] = [...appAggregates.entries()]
   });
 
 // ── Per-application usage with functionality breakdown ──────────
-function bucketFunctionality(fn: string): "validation" | "execution" | "blockCreation" | "viewOps" {
+export function bucketFunctionality(fn: string): "validation" | "execution" | "blockCreation" | "viewOps" {
   const u = fn.toUpperCase();
   if (u.includes("VALIDATION") || u.includes("CHECK")) return "validation";
   if (u.includes("CREATE") || u.includes("CREATION") || u.includes("PLACEMENT") || u.includes("INSERT")) return "blockCreation";

@@ -27,7 +27,7 @@ export function FluidsSealingsSplit() {
   return (
     <SplitDonut
       data={data}
-      primaryLabel="Sessions"
+      primaryLabel="Tool runs"
       colors={["var(--chart-1)", "var(--chart-2)"]}
     />
   );
