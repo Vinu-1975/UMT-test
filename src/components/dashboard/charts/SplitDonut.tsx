@@ -38,32 +38,39 @@ function makeRenderSliceLabel(colors: readonly string[]) {
     const y = cy + r * Math.sin(-midAngle * RADIAN);
     const sliceColor = colors[index % colors.length] ?? "var(--chart-1)";
     const fill = pickTextOnFill(sliceColor);
-    const outline = isLightFill(sliceColor)
-      ? undefined
-      : { paintOrder: "stroke" as const, stroke: "rgba(0,0,0,0.25)", strokeWidth: 2 };
+    // SVG attribute `fill=` does NOT resolve CSS var() — only the `style`
+    // property does. Setting fill through style ensures var(--foreground)
+    // actually paints black in light mode.
+    const isLight = isLightFill(sliceColor);
+    const textStyle = isLight
+      ? { fill }
+      : {
+          fill,
+          paintOrder: "stroke" as const,
+          stroke: "rgba(0,0,0,0.25)",
+          strokeWidth: 2,
+        };
     return (
       <g>
         <text
           x={x}
           y={y - 7}
-          fill={fill}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={12}
           fontWeight={700}
-          style={outline}
+          style={textStyle}
         >
           {num(value)}
         </text>
         <text
           x={x}
           y={y + 7}
-          fill={fill}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={11}
           fontWeight={600}
-          style={outline}
+          style={textStyle}
         >
           {`${Math.round(percent * 100)}%`}
         </text>

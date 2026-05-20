@@ -150,16 +150,19 @@ export function segmentLabelVertical(opts: Opts | string) {
     const text = num(v);
 
     if (height >= 14) {
+      // Use the `style` property (not the `fill` attribute) so any CSS
+      // var() references in the inside fill resolve — SVG attributes
+      // don't expand var(...).
       return (
         <text
           x={x + width / 2}
           y={y + height / 2}
-          fill={insideFill}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={11}
           fontWeight={600}
           pointerEvents="none"
+          style={{ fill: insideFill }}
         >
           {text}
         </text>
@@ -174,18 +177,18 @@ export function segmentLabelVertical(opts: Opts | string) {
         <path
           d={`M${anchorX},${anchorY} L${labelX - 3},${anchorY}`}
           fill="none"
-          stroke={color}
+          style={{ stroke: color }}
           strokeWidth={1}
           strokeOpacity={0.75}
         />
         <text
           x={labelX}
           y={anchorY}
-          fill={color}
           textAnchor="start"
           dominantBaseline="central"
           fontSize={11}
           fontWeight={700}
+          style={{ fill: color }}
         >
           {text}
         </text>
