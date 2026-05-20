@@ -4,7 +4,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterApplicationUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num, pct } from "@/lib/format";
-import { isLightFill, pickTextOnFill } from "./segment-label";
+import { isLightFill, pickTextOnFill, usePaletteVersion } from "./segment-label";
 
 export const APP_DONUT_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "appDonut",
@@ -37,6 +37,7 @@ function colorAt(i: number, total: number): string {
 }
 
 export function ApplicationDonut() {
+  usePaletteVersion();
   const { effective } = useChartFilters(APP_DONUT_FILTER.id, APP_DONUT_FILTER.applicable);
 
   const apps = useMemo(

@@ -1,6 +1,6 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { num, pct } from "@/lib/format";
-import { isLightFill, pickTextOnFill } from "./segment-label";
+import { isLightFill, pickTextOnFill, usePaletteVersion } from "./segment-label";
 
 export type SplitItem = { name: string; value: number };
 
@@ -88,6 +88,7 @@ export function SplitDonut({
   colors?: [string, string];
   primaryLabel?: string;
 }) {
+  usePaletteVersion();
   const total = data.reduce((s, d) => s + d.value, 0);
 
   return (

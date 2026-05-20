@@ -14,7 +14,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterApplicationUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
-import { segmentLabelVertical } from "./segment-label";
+import { segmentLabelVertical, usePaletteVersion } from "./segment-label";
 
 // Per-segment labels use the shared `segmentLabelVertical` so tiny
 // segments pop out to the right of the bar with a leader instead of
@@ -26,6 +26,7 @@ export const APP_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } =
 };
 
 export function ApplicationBars() {
+  usePaletteVersion();
   const { effective } = useChartFilters(APP_BARS_FILTER.id, APP_BARS_FILTER.applicable);
   const data = useMemo(
     () => [...filterApplicationUsage(effective)].sort((a, b) => b.total - a.total).slice(0, 8),

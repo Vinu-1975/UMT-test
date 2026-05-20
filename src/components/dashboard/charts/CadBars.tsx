@@ -4,7 +4,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterCadUsage } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num, pct } from "@/lib/format";
-import { isLightFill, pickTextOnFill } from "./segment-label";
+import { isLightFill, pickTextOnFill, usePaletteVersion } from "./segment-label";
 
 export const CAD_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "cadBars",
@@ -35,6 +35,7 @@ function colorAt(i: number, total: number): string {
 }
 
 export function CadBars() {
+  usePaletteVersion();
   const { effective } = useChartFilters(CAD_BARS_FILTER.id, CAD_BARS_FILTER.applicable);
   const cads = useMemo(
     () => [...filterCadUsage(effective)].sort((a, b) => b.sessions - a.sessions),

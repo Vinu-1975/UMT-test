@@ -15,7 +15,7 @@ import { useChartFilters } from "@/lib/filter-context";
 import { filterRawSessions } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
-import { segmentLabelHorizontal } from "./segment-label";
+import { segmentLabelHorizontal, usePaletteVersion } from "./segment-label";
 import {
   LegendFilterPills,
   toggleLegendSelection,
@@ -60,6 +60,7 @@ type Row = {
 };
 
 export function RegionBars() {
+  usePaletteVersion();
   const { effective, setOverride } = useChartFilters(REGION_BARS_FILTER.id, REGION_BARS_FILTER.applicable);
 
   // Legend pill click → isolate that CAD (or "Other") via the chart's own

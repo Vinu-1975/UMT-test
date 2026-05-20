@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { num } from "@/lib/format";
 
 /**
@@ -54,16 +55,53 @@ const LIGHT_FILL_TOKENS = new Set([
  */
 const RESOLVED_CACHE = new Map<string, string>();
 let CACHE_OBSERVER_INSTALLED = false;
+let paletteVersion = 0;
+const paletteSubscribers = new Set<() => void>();
+
+function bumpPaletteVersion(): void {
+  paletteVersion += 1;
+  RESOLVED_CACHE.clear();
+  paletteSubscribers.forEach((cb) => cb());
+}
 
 function ensureCacheInvalidation(): void {
   if (CACHE_OBSERVER_INSTALLED) return;
   if (typeof window === "undefined" || typeof document === "undefined") return;
-  const observer = new MutationObserver(() => RESOLVED_CACHE.clear());
+  // PaletteProvider applies its colour overrides via
+  // `documentElement.style.setProperty('--chart-N', …)` inside a post-mount
+  // useEffect — so the first chart render reads the still-stock palette and
+  // then white-text-on-yellow gets stuck until something else triggers a
+  // re-render. Watching `<html>`'s `class` / `style` / `data-theme` and
+  // bumping a version number lets the `usePaletteVersion()` hook force the
+  // affected charts to re-render the moment the palette actually applies.
+  const observer = new MutationObserver(bumpPaletteVersion);
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class", "style", "data-theme"],
   });
   CACHE_OBSERVER_INSTALLED = true;
+}
+
+/**
+ * Returns a number that increments whenever the live chart palette mutates
+ * on `<html>` (theme toggles, PaletteProvider re-applying chart-* vars).
+ * Charts that derive text/fill colours from the palette should call this so
+ * they re-render after the post-mount palette swap.
+ */
+export function usePaletteVersion(): number {
+  const [v, setV] = useState(paletteVersion);
+  useEffect(() => {
+    ensureCacheInvalidation();
+    // Force one tick after mount in case PaletteProvider's own effect
+    // applied between render and our subscription.
+    setV((prev) => (prev === paletteVersion ? prev + 1 : paletteVersion));
+    const cb = () => setV(paletteVersion);
+    paletteSubscribers.add(cb);
+    return () => {
+      paletteSubscribers.delete(cb);
+    };
+  }, []);
+  return v;
 }
 
 function resolveColor(color: string): string {

@@ -23,7 +23,7 @@ import {
   LegendFilterPills,
   toggleLegendSelection,
 } from "@/components/dashboard/LegendFilterPills";
-import { segmentLabelVertical } from "./segment-label";
+import { segmentLabelVertical, usePaletteVersion } from "./segment-label";
 
 export const REGION_MONTHLY_FILTER: {
   id: string;
@@ -71,6 +71,7 @@ type Shape = "stacked" | "grouped" | "line";
 type Row = { month: string } & Partial<Record<Region, number>> & { total: number };
 
 export function RegionMonthly() {
+  usePaletteVersion();
   const { effective, setOverride } = useChartFilters(
     REGION_MONTHLY_FILTER.id,
     REGION_MONTHLY_FILTER.applicable,

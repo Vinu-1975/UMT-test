@@ -23,7 +23,7 @@ import {
   LegendFilterPills,
   toggleLegendSelection,
 } from "@/components/dashboard/LegendFilterPills";
-import { segmentLabelVertical } from "./segment-label";
+import { segmentLabelVertical, usePaletteVersion } from "./segment-label";
 
 const CAD_LEGEND_ITEMS = [
   { value: "CATIA", color: "var(--chart-1)" },
@@ -53,6 +53,7 @@ export const MONTHLY_TOTAL_FILTER: {
 type ChartShape = "bar" | "line";
 
 export function MonthlyUsageTotal() {
+  usePaletteVersion();
   const { effective, setOverride } = useChartFilters(
     MONTHLY_TOTAL_FILTER.id,
     MONTHLY_TOTAL_FILTER.applicable,
