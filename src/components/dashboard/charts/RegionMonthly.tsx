@@ -19,6 +19,10 @@ import { REGIONS } from "@/lib/mock-data";
 import type { FilterDim, Region } from "@/lib/types";
 import { num } from "@/lib/format";
 import { ChartShapeToggle } from "@/components/dashboard/ChartShapeToggle";
+import {
+  LegendFilterPills,
+  toggleLegendSelection,
+} from "@/components/dashboard/LegendFilterPills";
 import { segmentLabelVertical } from "./segment-label";
 
 export const REGION_MONTHLY_FILTER: {
@@ -67,7 +71,7 @@ type Shape = "stacked" | "grouped" | "line";
 type Row = { month: string } & Partial<Record<Region, number>> & { total: number };
 
 export function RegionMonthly() {
-  const { effective } = useChartFilters(
+  const { effective, setOverride } = useChartFilters(
     REGION_MONTHLY_FILTER.id,
     REGION_MONTHLY_FILTER.applicable,
   );
@@ -113,6 +117,21 @@ export function RegionMonthly() {
     return { rows, presentRegions, totalSessions };
   }, [effective]);
 
+  // Legend pill click → isolate that region via the chart's own override
+  // (click again on the lone selection to clear).
+  const toggleRegion = (region: string) => {
+    setOverride({ region: toggleLegendSelection(effective.region, region) });
+  };
+
+  // Static legend items — always show all four regions even when one is
+  // filtered out of the data, so the user can switch between them with a
+  // single click instead of clearing the filter first.
+  const legendItems = (["NA", "EU", "ASIA", "SA"] as const).map((r) => ({
+    value: r,
+    label: REGION_FULL[r],
+    color: REGION_COLOR[r],
+  }));
+
   if (totalSessions === 0) {
     return (
       <div className="grid h-[300px] place-items-center text-sm text-muted-foreground">
@@ -139,7 +158,7 @@ export function RegionMonthly() {
       <div className="h-[320px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           {shape === "line" ? (
-            <LineChart data={rows} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
+            <LineChart data={rows} margin={{ top: 48, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -171,9 +190,15 @@ export function RegionMonthly() {
               />
               <Legend
                 verticalAlign="top"
-                iconType="circle"
-                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
-                formatter={(value) => REGION_FULL[value as Region] ?? value}
+                wrapperStyle={{ paddingBottom: 24 }}
+                content={() => (
+                  <LegendFilterPills
+                    items={legendItems}
+                    selected={effective.region}
+                    onToggle={toggleRegion}
+                    noun="region"
+                  />
+                )}
               />
               {presentRegions.map((r) => (
                 <Line
@@ -200,7 +225,7 @@ export function RegionMonthly() {
               ))}
             </LineChart>
           ) : (
-            <BarChart data={rows} margin={{ top: 24, right: 12, left: -8, bottom: 0 }}>
+            <BarChart data={rows} margin={{ top: 48, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -232,9 +257,15 @@ export function RegionMonthly() {
               />
               <Legend
                 verticalAlign="top"
-                iconType="circle"
-                wrapperStyle={{ paddingBottom: 8, fontSize: 13 }}
-                formatter={(value) => REGION_FULL[value as Region] ?? value}
+                wrapperStyle={{ paddingBottom: 24 }}
+                content={() => (
+                  <LegendFilterPills
+                    items={legendItems}
+                    selected={effective.region}
+                    onToggle={toggleRegion}
+                    noun="region"
+                  />
+                )}
               />
               {presentRegions.map((r, i) => {
                 const isLast = i === presentRegions.length - 1;

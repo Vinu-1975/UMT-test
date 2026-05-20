@@ -41,30 +41,53 @@ const LIGHT_FILL_TOKENS = new Set([
 ]);
 
 /**
- * Resolve `var(--token)` strings to the computed colour the browser actually
- * paints. SSR-safe (returns the raw string when `window` isn't available).
- * Results are cached per token to keep this cheap inside per-slice render
- * loops.
+ * Resolve any CSS colour expression (named token, `var(--x)`, `oklch(...)`,
+ * `#hex`, gradient strings — anything you can put in `background-color`) to
+ * the concrete RGB the browser would actually paint. We do this by mounting
+ * a 1×1 hidden probe div, letting the engine compute its `background-color`
+ * (which always comes back as `rgb(...)` or `rgba(...)`), then reading it.
+ *
+ * SSR-safe: returns the input untouched when `document` isn't available.
+ * Results are cached so the probe runs once per unique colour, not per slice.
+ * The cache is flushed whenever the theme class on `<html>` toggles, so
+ * dark-mode swaps don't leave us with stale light-mode RGB values.
  */
 const RESOLVED_CACHE = new Map<string, string>();
+let CACHE_OBSERVER_INSTALLED = false;
+
+function ensureCacheInvalidation(): void {
+  if (CACHE_OBSERVER_INSTALLED) return;
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const observer = new MutationObserver(() => RESOLVED_CACHE.clear());
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class", "style", "data-theme"],
+  });
+  CACHE_OBSERVER_INSTALLED = true;
+}
 
 function resolveColor(color: string): string {
   if (!color || typeof color !== "string") return color;
-  if (!color.startsWith("var(")) return color;
   if (typeof window === "undefined" || typeof document === "undefined") return color;
+  ensureCacheInvalidation();
   const cached = RESOLVED_CACHE.get(color);
   if (cached !== undefined) return cached;
-  const match = color.match(/var\(\s*(--[\w-]+)\s*\)/);
-  if (!match) {
-    RESOLVED_CACHE.set(color, color);
+  let probe: HTMLDivElement | null = null;
+  try {
+    probe = document.createElement("div");
+    probe.style.cssText =
+      "position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;pointer-events:none;visibility:hidden;";
+    probe.style.backgroundColor = color;
+    document.body.appendChild(probe);
+    const computed = getComputedStyle(probe).backgroundColor.trim();
+    const out = computed || color;
+    RESOLVED_CACHE.set(color, out);
+    return out;
+  } catch {
     return color;
+  } finally {
+    if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
   }
-  const computed = getComputedStyle(document.documentElement)
-    .getPropertyValue(match[1]!)
-    .trim();
-  const out = computed || color;
-  RESOLVED_CACHE.set(color, out);
-  return out;
 }
 
 /** Relative luminance (0..1) for an sRGB triplet. */
@@ -213,16 +236,19 @@ export function segmentLabelHorizontal(opts: Opts | string) {
     const approxTextWidth = text.length * 6.6 + 10;
 
     if (width >= approxTextWidth) {
+      // Use the `style` property (not the `fill` attribute) so any CSS
+      // var() references in the inside fill resolve — SVG attributes
+      // don't expand var(...).
       return (
         <text
           x={x + width / 2}
           y={y + height / 2}
-          fill={insideFill}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={12}
           fontWeight={600}
           pointerEvents="none"
+          style={{ fill: insideFill }}
         >
           {text}
         </text>
@@ -238,18 +264,18 @@ export function segmentLabelHorizontal(opts: Opts | string) {
         <path
           d={`M${anchorX},${y} L${anchorX},${elbowY} L${labelX - 3},${elbowY}`}
           fill="none"
-          stroke={color}
+          style={{ stroke: color }}
           strokeWidth={1}
           strokeOpacity={0.75}
         />
         <text
           x={labelX}
           y={labelY}
-          fill={color}
           textAnchor="start"
           dominantBaseline="auto"
           fontSize={11}
           fontWeight={700}
+          style={{ fill: color }}
         >
           {text}
         </text>

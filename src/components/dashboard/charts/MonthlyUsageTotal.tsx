@@ -19,68 +19,16 @@ import { filterMonthlyCad } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
 import { ChartShapeToggle } from "@/components/dashboard/ChartShapeToggle";
+import {
+  LegendFilterPills,
+  toggleLegendSelection,
+} from "@/components/dashboard/LegendFilterPills";
 import { segmentLabelVertical } from "./segment-label";
-import { cn } from "@/lib/utils";
 
-const CAD_LEGEND_ITEMS: ReadonlyArray<{ name: "CATIA" | "NX"; color: string }> = [
-  { name: "CATIA", color: "var(--chart-1)" },
-  { name: "NX", color: "var(--chart-2)" },
-];
-
-/**
- * Clickable Recharts-style legend that doubles as a CAD filter. Clicking a
- * pill isolates that CAD; clicking it again (when it's the lone selection)
- * clears the filter and restores both. Selection state lives in the chart's
- * own override slot so it doesn't leak out to the rest of the dashboard.
- */
-function CadFilterLegend({
-  selectedCads,
-  onToggle,
-}: {
-  selectedCads: readonly string[];
-  onToggle: (cad: "CATIA" | "NX") => void;
-}) {
-  const hasFilter = selectedCads.length > 0;
-  return (
-    <div className="flex justify-center gap-2 pb-2 text-[13px]">
-      {CAD_LEGEND_ITEMS.map((item) => {
-        const isOn = selectedCads.includes(item.name);
-        const isMuted = hasFilter && !isOn;
-        return (
-          <button
-            key={item.name}
-            type="button"
-            onClick={() => onToggle(item.name)}
-            aria-pressed={hasFilter ? isOn : false}
-            title={
-              isOn
-                ? `Clear ${item.name} filter`
-                : hasFilter
-                  ? `Switch to ${item.name}`
-                  : `Show only ${item.name}`
-            }
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium transition-colors",
-              "hover:bg-[oklch(0.83_0.16_88_/_0.22)] hover:text-foreground",
-              isOn
-                ? "bg-primary/10 text-foreground ring-1 ring-primary/30"
-                : isMuted
-                  ? "text-muted-foreground/70 opacity-70"
-                  : "text-foreground",
-            )}
-          >
-            <span
-              aria-hidden
-              className="block size-2 rounded-full"
-              style={{ background: item.color }}
-            />
-            {item.name}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+const CAD_LEGEND_ITEMS = [
+  { value: "CATIA", color: "var(--chart-1)" },
+  { value: "NX", color: "var(--chart-2)" },
+] as const;
 
 // Per-segment labels use the shared `segmentLabelVertical` so tiny
 // values pop out to the right of the bar with a leader instead of
@@ -118,9 +66,8 @@ export function MonthlyUsageTotal() {
 
   // Legend pill click → isolate that CAD via the chart's own filter override.
   // Clicking the lone selection again clears the filter (restores both CADs).
-  const toggleCad = (cad: "CATIA" | "NX") => {
-    const isOnly = effective.cad.length === 1 && effective.cad[0] === cad;
-    setOverride({ cad: isOnly ? [] : [cad] });
+  const toggleCad = (cad: string) => {
+    setOverride({ cad: toggleLegendSelection(effective.cad, cad) });
   };
 
   const average = useMemo(() => {
@@ -204,9 +151,11 @@ export function MonthlyUsageTotal() {
                 verticalAlign="top"
                 wrapperStyle={{ paddingBottom: 8 }}
                 content={() => (
-                  <CadFilterLegend
-                    selectedCads={effective.cad}
+                  <LegendFilterPills
+                    items={CAD_LEGEND_ITEMS}
+                    selected={effective.cad}
                     onToggle={toggleCad}
+                    noun="CAD"
                   />
                 )}
               />
@@ -348,9 +297,11 @@ export function MonthlyUsageTotal() {
                 verticalAlign="top"
                 wrapperStyle={{ paddingBottom: 8 }}
                 content={() => (
-                  <CadFilterLegend
-                    selectedCads={effective.cad}
+                  <LegendFilterPills
+                    items={CAD_LEGEND_ITEMS}
+                    selected={effective.cad}
                     onToggle={toggleCad}
+                    noun="CAD"
                   />
                 )}
               />

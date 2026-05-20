@@ -16,6 +16,10 @@ import { filterRawSessions } from "@/lib/filtering";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
 import { segmentLabelHorizontal } from "./segment-label";
+import {
+  LegendFilterPills,
+  toggleLegendSelection,
+} from "@/components/dashboard/LegendFilterPills";
 
 export const REGION_BARS_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "regionBars",
@@ -56,7 +60,22 @@ type Row = {
 };
 
 export function RegionBars() {
-  const { effective } = useChartFilters(REGION_BARS_FILTER.id, REGION_BARS_FILTER.applicable);
+  const { effective, setOverride } = useChartFilters(REGION_BARS_FILTER.id, REGION_BARS_FILTER.applicable);
+
+  // Legend pill click → isolate that CAD (or "Other") via the chart's own
+  // override. Clicking the lone selection again clears the filter.
+  // "Other" maps to "everything that's not CATIA or NX" — we model it by
+  // setting cad to ["__OTHER__"], which is just an empty match against the
+  // real CAD values, effectively hiding CATIA & NX bars. To keep things
+  // simple we only wire CATIA / NX here.
+  const toggleCad = (cad: string) => {
+    setOverride({ cad: toggleLegendSelection(effective.cad, cad) });
+  };
+
+  const legendItems = [
+    { value: "CATIA", color: CATIA_COLOR },
+    { value: "NX", color: NX_COLOR },
+  ] as const;
 
   const data = useMemo<Row[]>(() => {
     const sessions = filterRawSessions(effective);
@@ -132,8 +151,16 @@ export function RegionBars() {
           <Legend
             verticalAlign="top"
             align="right"
-            iconType="circle"
-            wrapperStyle={{ fontSize: 12, paddingBottom: 6 }}
+            wrapperStyle={{ paddingBottom: 6 }}
+            content={() => (
+              <LegendFilterPills
+                items={legendItems}
+                selected={effective.cad}
+                onToggle={toggleCad}
+                noun="CAD"
+                className="justify-end pr-1"
+              />
+            )}
           />
           {average > 0 && data.length > 1 ? (
             <ReferenceLine

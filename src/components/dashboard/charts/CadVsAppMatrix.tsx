@@ -15,10 +15,16 @@ import { filterApplicationUsage } from "@/lib/filtering";
 import { CAD_TOOLS } from "@/lib/mock-data";
 import type { FilterDim } from "@/lib/types";
 import { num } from "@/lib/format";
+import {
+  LegendFilterPills,
+  toggleLegendSelection,
+} from "@/components/dashboard/LegendFilterPills";
 
 export const CAD_MATRIX_FILTER: { id: string; applicable: readonly FilterDim[] } = {
   id: "cadMatrix",
-  applicable: ["range", "productLine", "region", "hardware"],
+  // `application` is in the applicable list so the legend pills can act as
+  // an app filter for this chart. The chip-bar's "Tool" chip stays in sync.
+  applicable: ["range", "application", "productLine", "region", "hardware"],
 };
 
 const PALETTE = [
@@ -30,7 +36,13 @@ const PALETTE = [
 ];
 
 export function CadVsAppMatrix() {
-  const { effective } = useChartFilters(CAD_MATRIX_FILTER.id, CAD_MATRIX_FILTER.applicable);
+  const { effective, setOverride } = useChartFilters(CAD_MATRIX_FILTER.id, CAD_MATRIX_FILTER.applicable);
+
+  // Legend pill click → isolate that KBE tool via the chart's own override.
+  // Clicking the lone selection again clears the filter.
+  const toggleApp = (app: string) => {
+    setOverride({ application: toggleLegendSelection(effective.application, app) });
+  };
 
   const { topApps, data } = useMemo(() => {
     const apps = filterApplicationUsage(effective);
@@ -86,7 +98,21 @@ export function CadVsAppMatrix() {
             cursor={{ fill: "var(--muted)" }}
             formatter={(v, name) => [`${num(Number(v))} runs`, name as string]}
           />
-          <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ paddingBottom: 8, fontSize: 13 }} />
+          <Legend
+            verticalAlign="top"
+            wrapperStyle={{ paddingBottom: 8 }}
+            content={() => (
+              <LegendFilterPills
+                items={topApps.map((appName, i) => ({
+                  value: appName,
+                  color: PALETTE[i % PALETTE.length]!,
+                }))}
+                selected={effective.application}
+                onToggle={toggleApp}
+                noun="tool"
+              />
+            )}
+          />
           {topApps.map((appName, i) => (
             <Bar key={appName} dataKey={appName} name={appName} fill={PALETTE[i % PALETTE.length]} radius={[6, 6, 0, 0]}>
               <LabelList
